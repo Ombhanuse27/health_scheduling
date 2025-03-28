@@ -1,0 +1,63 @@
+.hospital-list-container{
+    background-color: white;
+}
+.search-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin: 20px 0;
+}
+
+.search {
+    display: flex;
+    align-items: center;
+    height: 50px;
+    width: 600px;
+    border-radius: 25px;
+    border: 1px solid #ccc;
+    padding: 5px 10px;
+    background: linear-gradient(135deg, #ffffff, #f0f0f0);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease-in-out;
+}
+
+.search:hover {
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+}
+
+input {
+    width: 100%;
+    border: none;
+    padding: 10px;
+    border-radius: 20px;
+    outline: none;
+    font-size: 18px;
+    background: transparent;
+}
+
+input::placeholder {
+    font-size: 16px;
+    color: #888;
+    font-style: italic;
+}
+
+#search-icon {
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
+    transition: transform 0.3s ease-in-out;
+}
+
+#search-icon:hover {
+    transform: scale(1.1);
+    filter: brightness(80%);
+}
+
+
+
+.hospital-list{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}

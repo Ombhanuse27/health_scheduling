@@ -1,8 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useRef } from "react";
 import { submitOpdForm, getHospitals } from "../api/api"; 
 import { Link } from "react-router-dom";
+import NavbarLink from "./Navbar/NavbarLink";
+import lottie from 'lottie-web';
+import Footer from "./Footer/Footer";
 
 const OpdForm = () => {
+
+  const container = useRef(null);
+
+  useEffect(() => {
+    const animationInstance = lottie.loadAnimation({
+      container: container.current,
+      renderer: "svg",
+      loop: true,
+      autoplay: true,
+      animationData: require("../animations/appointment.json"),
+    });
+
+    // Cleanup on unmount
+    return () => {
+      animationInstance.destroy();
+    };
+  }, []);
+
+
   const [formData, setFormData] = useState({
     fullName: "",
     age: "",
@@ -42,7 +64,7 @@ const OpdForm = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    if (name === "hospitalId") {  // Fix: Ensure we update hospitalId correctly
+    if (name === "hospitalId") {  
       const selectedHospital = hospitals.find(hospital => hospital._id === value);
       setFormData({
         ...formData,
@@ -69,10 +91,10 @@ const OpdForm = () => {
     }
   
     try {
-      // First, call the API function
+      
       await submitOpdForm(formData.hospitalId, formData);
   
-      // Then, make the fetch request to the backend
+      
       const response = await fetch("http://localhost:5000/submitOpdForm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -88,30 +110,23 @@ const OpdForm = () => {
       }
     } catch (error) {
       console.error("Error submitting OPD Form:", error);
-      alert("Error submitting OPD Form");
+      alert("Errorssss submitting OPD Form");
     }
   };
   
   
   return (
-    <div className="w-full">
-      <div className="h-16 px-5 bg-blue-500 text-white flex items-center justify-between">
-        <h1 className="text-xl font-bold">DocTime</h1>
-        <div className="flex gap-6">
-          <Link to="/login" className="px-6 py-2 rounded hover:bg-blue-600 transition">
-            Login
-          </Link>
-          <Link to="/register" className="px-6 py-2 rounded hover:bg-blue-600 transition">
-            Register
-          </Link>
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto p-8 bg-white shadow-2xl rounded-2xl mt-8">
-        <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">OPD Form</h2>
+    <div className="w-full ">
+     <NavbarLink/>
+     <div className="appointment bg-gradient-to-r from-[#EBF3FF] to-[#f0f5fd] rounded-[30px] p-[100px_60px_0px_60px] mx-[30px] relative overflow-hidden sm:rounded-none sm:p-[40px_25px_0_30px] sm:mx-0 mt-36">
+        <div className="container mx-auto">
+          <div className="flex flex-wrap bg-white my-[30px] ">
+          <div className="max-w-4xl mx-auto p-8 border-1 rounded-2xl mt-8"> 
+          {/* bg-white shadow-2xl  */}
+        <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Appointment Form</h2>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
-          {/* Hospital Selection */}
+          
           <div className="flex flex-col">
             <label htmlFor="hospitalId" className="block text-sm font-medium text-gray-700 mb-1">
               Select Hospital (Admin Username)
@@ -128,7 +143,6 @@ const OpdForm = () => {
               {hospitals.length > 0 ? (
                 hospitals.map((hospital) => (
                   <option key={hospital._id} value={hospital._id}>
-                  
                     {hospital.username} 
                   </option>
                 ))
@@ -167,7 +181,17 @@ const OpdForm = () => {
           </button>
         </form>
       </div>
+
+            <div className="w-full lg:w-7/12 md:w-6/12 sm:w-full mb-5 app-image flex items-center justify-center">
+              <div className="img" ref={container}></div>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+  <Footer/>
     </div>
+    
   );
 };
 

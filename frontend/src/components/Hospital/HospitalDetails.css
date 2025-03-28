@@ -1,0 +1,95 @@
+
+.hospital-container2 {
+    background-color: #ededf5;
+    min-height: 100vh; 
+    margin-top: 100px;
+    width: 100%;
+    
+}
+.search-bar{
+    display: flex;
+    height: 35px;
+    background-color: white;
+    border-radius: 10px;
+    border: 1px solid #151414;
+}
+
+
+.hospital-card2 {
+    position: relative;
+    width: 100%;
+    margin: auto;
+
+    padding: 5px;
+    border-radius: 5px;
+    overflow: hidden;
+    background-color: white;
+}
+
+/* Hospital Image */
+#hospital-card-img2 {
+    width: 100%;
+    height: 500px;
+    object-fit: cover;
+    border-radius: 5px;
+}
+
+/* Info Layout */
+.hospital-info2 {
+    padding: 5px 25px;
+    display: flex;
+    flex-direction: column;
+}
+
+.hospital-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+}
+#hospital-name2 {
+    font-size: 25px;
+    font-weight: bold;
+    color: #333;
+}
+
+#hospital-timing2 {
+    margin-right: 30px;
+    font-size: 18px;
+    font-weight: 500;
+    color: #333;
+}
+
+
+.hospital-contact {
+    display: flex;
+   gap:40px;
+    font-size: 15px;
+    margin-top: 5px;
+    margin-left: 30px;
+}
+
+
+#rating2 {
+    position: absolute;
+    bottom: 110px;
+    right: 20px;
+    font-size: 18px;
+    background: white;
+    color:black;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+
+.hospital-extra-details {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-top: 20px;
+    width: 100%;
+    
+    text-align: left;
+    font-family: 'Arial', sans-serif;
+}

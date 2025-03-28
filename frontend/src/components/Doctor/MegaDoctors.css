@@ -1,0 +1,126 @@
+.mega-doctors {
+    width: 100%;
+    padding: 50px 30px;
+    text-align: center;
+  }
+  
+  .row {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 50px;
+    margin: 0;
+  }
+  
+
+  .doctor-box {
+    background-color: #dfefe4;
+    border-radius: 12px;
+    border: 1px solid black;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    padding: 15px 40px ;
+    transition: transform 0.3s ease;
+    
+  }
+  
+  .doctor-box:hover {
+    transform: translateY(-10px);
+  }
+  
+
+  .image img {
+    width: 100%;
+    height: 250px;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    object-fit: cover;
+  }
+  
+ 
+  .doctor-name{
+    margin-top: 15px;
+    font-size: 20px;
+    color: #333;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: 900;
+  }
+  
+
+  .speciality {
+    display: block;
+    font-size: 18px;
+    color: #777;
+    margin-bottom: 10px;
+  }
+  
+
+  .doctor-info {
+    text-align: left;
+    margin: 10px 0;
+    padding: 0 10px;
+    font-size: 16px;
+    color: #8e292e;
+  }
+  
+  .doctor-info p {
+    margin: 5px 0;
+  }
+  
+  /* Appointment Button */
+  .appointment-btn {
+    padding: 10px 20px;
+    background-color: #1e88e5;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .appointment-btn:hover {
+    background-color: #1565c0;
+  }
+  
+  /* Decorative Images */
+  .images-doctors-decore {
+    margin-top: 40px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+  }
+  
+  .images-doctors-decore img {
+    width: 100px;
+    height: auto;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+  }
+  
+  .images-doctors-decore img:hover {
+    opacity: 1;
+  }
+  
+
+  @media (max-width: 992px) {
+    .doctor-box {
+      width: 90%;
+    }
+  
+    .row {
+      gap: 20px;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .mega-doctors {
+      padding: 30px 15px;
+    }
+  
+    .doctor-box {
+      width: 100%;
+    }
+  }
+  

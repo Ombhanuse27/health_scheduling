@@ -21,7 +21,6 @@ const Login = () => {
       alert(error.response?.data?.message || "Login failed!");
     }
   };
-  
 
   return (
     <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg">

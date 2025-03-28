@@ -1,0 +1,110 @@
+.navbarr {
+    width: 100%;
+    position: fixed; 
+    top: 0;
+    left: 0;
+    background-color: white;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.nav-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 1300px;
+    margin: auto;
+}
+
+/* Move logo to the left */
+.navbar-brand {
+    margin-right: auto; /* Pushes other elements to the right */
+    padding-left: 0;
+}
+
+#logo-img {
+    width: 190px;
+    height: 150px;
+}
+
+/* Navbar items */
+.navbar-navv {
+    display: flex;
+    gap: 30px;
+    align-items: center;
+    justify-content: flex-end; /* Aligns nav items to the right */
+    flex-grow: 1;
+}
+
+.navbar-navv a {
+    color: rgb(25, 77, 188)!important;
+    font-weight: 700;
+    font-size: 20px;
+    
+    position: relative;
+}
+.navbar-navv a::after{
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background-color: rgb(193, 76, 76);
+    transition:width 0.5s;
+}
+
+.navbar-navv a:hover,
+.navbar-navv a:focus {
+    color: rgb(200, 19, 19) !important;
+}
+.navbar-navv a:hover::after,
+.navbar-navv a:focus::after{
+    width: 100%;
+}
+.navbar-navv button {
+    border: none;
+    background-color: #e84054;
+    padding: 15px 25px;
+    font-size: 18px;
+    border-radius: 5px;
+    font-weight: bold;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background 0.3s ease;
+}
+
+.navbar-navv button:hover {
+    background-color: #2412edbb;
+}
+.navbar-navv button:hover::after,
+.navbar-navv button:focus::after {
+    content: none;
+    width: 0; 
+}
+
+@media screen and (max-width: 991px) {
+    .nav-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .navbar-navv {
+        flex-direction: column;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .navbar-brand {
+        width: 100%;
+        display: flex;
+        justify-content: flex-start;
+        margin-bottom: 10px;
+    }
+}

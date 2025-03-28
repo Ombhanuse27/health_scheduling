@@ -1,0 +1,96 @@
+import React, { useState } from 'react'
+import { Container, Nav, Navbar } from 'react-bootstrap'
+import './NavbarLink.css'
+import Logo from '../../images/logo1.png'
+import { faPhoneAlt, faBars, faTimes } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { Link } from 'react-router-dom'
+
+function NavbarLink() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const toggleMenu = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const navLinks = [
+    { to: "/", label: "Home" },
+    { to: "/hospital", label: "Hospitals List" },
+    { to: "/opdForm", label: "Book Appointment" },
+    { to: "/login", label: "Login / Register" }
+  ];
+
+  return (
+    <Navbar 
+      bg="white" 
+      expand="lg" 
+      className='fixed top-0 left-0 w-full z-50 shadow-md'
+    >
+      <Container fluid className='nav-container max-w-screen-xl mx-auto px-4 flex items-center justify-between'>
+        {/* Logo */}
+        <Navbar.Brand className='navbar-brand mr-auto'>
+          <Link to="/">
+            <img 
+              id="logo-img" 
+              src={Logo} 
+              alt="Health-schedule" 
+              className='w-48 h-36 object-contain'
+            />
+          </Link>
+        </Navbar.Brand>
+
+        {/* Mobile Menu Toggle */}
+        <div className='lg:hidden'>
+          <button 
+            onClick={toggleMenu} 
+            className='text-2xl focus:outline-none'
+          >
+            <FontAwesomeIcon 
+              icon={isOpen ? faTimes : faBars} 
+              className='text-blue-600'
+            />
+          </button>
+        </div>
+
+        {/* Navigation Links */}
+        <Navbar.Collapse 
+          id="basic-navbar-nav" 
+          className={`
+            lg:flex lg:items-center lg:w-auto 
+            fixed lg:static 
+            top-20 left-0 right-0 
+            bg-white lg:bg-transparent 
+            ${isOpen ? 'block' : 'hidden'}
+            lg:block
+            shadow-lg lg:shadow-none
+            p-4 lg:p-0
+          `}
+        >
+          <Nav className='flex flex-col lg:flex-row items-center gap-4 lg:gap-6'>
+            {navLinks.map((link, index) => (
+              <Link 
+                key={index} 
+                to={link.to} 
+                className='nav-link text-lg font-bold text-blue-600 hover:text-red-500 transition-colors'
+                onClick={() => setIsOpen(false)}
+              >
+                {link.label}
+              </Link>
+            ))}
+
+            {/* Contact Button for Mobile */}
+            <div className='lg:hidden mt-4 flex items-center gap-3'>
+              <FontAwesomeIcon 
+                icon={faPhoneAlt} 
+                className='text-2xl text-blue-600'
+              />
+              <span className='text-lg font-semibold'>+91 1234567890</span>
+            </div>
+          </Nav>
+        </Navbar.Collapse>
+      </Container>
+    </Navbar>
+  )
+}
+
+export default NavbarLink

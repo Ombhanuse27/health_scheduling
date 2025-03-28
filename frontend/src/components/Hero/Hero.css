@@ -1,0 +1,116 @@
+/* Hero.css - Strict UI Implementation */
+.hero {
+    background: linear-gradient(90deg, #EBF3FF 0%, #E3EEFF 100%);
+    padding: 80px 0;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+}
+
+.hero-content {
+    width: 50%;
+    padding-right: 40px;
+}
+
+.hero-image {
+    width: 50%;
+    text-align: right;
+}
+
+.hero-content h1 {
+    font-size: 42px;
+    font-weight: 700;
+    color: #2A2A2A;
+    line-height: 1.25;
+    margin-bottom: 20px;
+}
+
+.hero-content p {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #555555;
+    margin-bottom: 30px;
+}
+
+.cta-container {
+    display: flex;
+    gap: 25px;
+}
+
+.cta-bold {
+    font-weight: 700;
+    color: #2A7ADE;
+    font-size: 16px;
+    cursor: pointer;
+    position: relative;
+}
+
+.cta-bold:after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -2px;
+    left: 0;
+    background-color: #2A7ADE;
+    transition: width 0.3s ease;
+}
+
+.cta-bold:hover:after {
+    width: 100%;
+}
+
+.doctor-img {
+    max-width: 100%;
+    height: auto;
+    max-height: 500px;
+    object-fit: contain;
+}
+
+/* Strict Mobile Responsiveness */
+@media (max-width: 992px) {
+    .row {
+        flex-direction: column;
+    }
+    
+    .hero-content, 
+    .hero-image {
+        width: 100%;
+        padding-right: 0;
+        text-align: center;
+    }
+    
+    .hero-image {
+        margin-top: 40px;
+        text-align: center;
+    }
+    
+    .cta-container {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 576px) {
+    .hero {
+        padding: 60px 0;
+    }
+    
+    .hero-content h1 {
+        font-size: 32px;
+    }
+    
+    .cta-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+}

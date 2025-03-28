@@ -1,0 +1,145 @@
+.register1 {
+    background: linear-gradient(90deg, #EBF3FF 0%, #E3EEFF 100%);
+    padding-top: 100px;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container1 {
+    width: 60%; 
+    height: 100%; 
+    display: flex;
+    margin: 20px;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff; 
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Image Section */
+.container1 img {
+    width: 50%;
+    height: auto;
+    margin: 10px;
+    object-fit: cover;
+}
+
+.box-register1 {
+    background-color: #fff;
+    padding: 10px 80px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    max-width: 50%;
+    border-radius: 10px;
+    
+}
+
+/* Login Text */
+.register-text1 {
+    font-size: 40px; /* Increased font size */
+    font-weight: bolder; /* Made text bold */
+    color: rgb(227, 62, 62); /* Red color to match the theme */
+}
+
+/* Input Fields */
+.inputs1 {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+}
+
+.inputs1 input {
+    border-radius: 10px;
+    padding: 16px; /* Increased padding */
+    font-size: 18px; /* Increased font size */
+    font-weight: bold; /* Made input text bold */
+    border: 1px solid rgba(24, 45, 67, 0.655);
+    outline: none;
+    width: 100%;
+    transition: 0.3s;
+}
+
+.inputs1 input:focus {
+    border: 2px solid rgb(157, 157, 245); /* Increased border thickness on focus */
+    box-shadow: 0 0 10px rgba(157, 157, 245, 0.5); /* Added focus shadow */
+}
+
+
+.submit1 {
+    width: 100%;
+    color: white;
+    font-size: 20px; /* Increased font size */
+    font-weight: bold; /* Made button text bold */
+    border-radius: 10px;
+    padding: 16px; /* Increased padding */
+    border: none;
+    outline: none;
+    background-color: rgb(227, 62, 62); /* Red color to match the theme */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.3s;
+    opacity: 0.9;
+}
+
+.submit1:hover {
+    opacity: 1;
+    background-color: rgb(200, 50, 50); /* Slightly darker red on hover */
+}
+
+/* Register Link */
+.box-register1 span {
+    font-size: 18px; /* Increased font size */
+    font-weight: bold; /* Made text bold */
+    color: #333;
+}
+
+.login-link1 a {
+    width: 100%;
+    color: white;
+    font-size: 20px; /* Increased font size */
+    font-weight: bold; /* Made button text bold */
+    border-radius: 10px;
+    padding: 16px; /* Increased padding */
+    border: none;
+    outline: none;
+    background-color: rgb(36, 89, 203); /* Blue color */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.9;
+    transition: 0.3s;
+}
+
+.login-link1 a:hover {
+    opacity: 1;
+    background-color: rgb(30, 70, 180); 
+    color: white;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container1 {
+        flex-direction: column;
+        padding: 20px;
+        height: auto; /* Adjust height for smaller screens */
+    }
+
+    .container1 img {
+        width: 100%;
+        max-width: 400px;
+        margin-bottom: 20px;
+    }
+
+    .box-register1 {
+        width: 100%;
+    }
+}
