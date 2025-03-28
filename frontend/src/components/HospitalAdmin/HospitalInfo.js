@@ -25,6 +25,10 @@ const HospitalInfo = () => {
   const [errors, setErrors] = useState({});
   const [uploading, setUploading] = useState(false);
 
+<<<<<<< HEAD
+=======
+ 
+>>>>>>> 1b5a0a7751a70ea0c63cf1fdf0b74478a5637df8
   useEffect(() => {
     const fetchHospitals = async () => {
       try {
@@ -137,7 +141,7 @@ const HospitalInfo = () => {
                   <img
                     src={formData.hospitalImage}
                     alt="Hospital"
-                    className="w-full h-full rounded-full object-cover"
+                    className="w-full h-full rounded-2 object-cover"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">

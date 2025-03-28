@@ -6,13 +6,14 @@ import Register from "./components/Login/RegisterForm";
 import Landingpage from "./components/LandingPage/Landingpage";
 import NavbarLink from './components/Navbar/NavbarLink';
 import ProtectedRoute  from "./components/Protectedroutes";
-import Doclist from "./components/doclist";
 import DoctorForm from "./components/Docform";
 import Hospital from "./components/Hospital/Hospital";
 import Hospitalsidebar from "./_components/HospitalSidebar";
 import HospitalDetails from "./components/Hospital/HospitalDetails";
 import './App.css';
 import DoctorSidebar from "./_components/DoctorSidebar";
+import DoctorInfo from "./components/Doctorsidebar/DoctorInfo";
+
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
         <Route path="/doctorsidebar" element={<DoctorSidebar />} />
           <Route path="/opdForm" element={<> <OpdForm /></>} />
           <Route path="/hospital/hospital-details" element={<><HospitalDetails /></>}/>
+          <Route path="/doctorInfo" element={<DoctorInfo />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Routes>
