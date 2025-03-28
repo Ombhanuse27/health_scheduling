@@ -15,14 +15,14 @@ import {
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { cn } from "../lib/utils";
-import Dashboard from "../components/Doctorsidebar/Doctordashboard";
-import DoctorInfo from "../components/Doctorsidebar/DoctorInfo";
+import Dashboard from "../components/Patientsidebar/Patientdashboard";
+import DoctorInfo from "../components/Patientsidebar/PatientInfo";
 
-export function DoctorSidebar() {
+export function PatientSidebar() {
   const links = [
     {
       label: "Dashboard",
-      to: "/hospitalsidebar/dashboard",
+      to: "/PatientSidebar/dashboard",
       icon: (
         <IconBrandTabler className="text-neutral-700 dark:text-neutral-200 h-8 w-6 shrink-0" />
       ),
@@ -44,7 +44,7 @@ export function DoctorSidebar() {
   // Handler for edit icon click
   const handleEditClick = () => {
     setIsEditMode(true);
-    setSelectedLink("/hospitalsidebar/info");
+    setSelectedLink("/PatientSidebar/info");
   };
 
   return (
@@ -88,11 +88,11 @@ export function DoctorSidebar() {
               ))}
             </div>
           </div>
-       
+        
         </SidebarBody>
       </Sidebar>
 
-      {/* Render content dynamically inside Skeleton */}
+   
       <div className="flex flex-1">
         <Skeleton 
           selectedLink={selectedLink} 
@@ -128,34 +128,33 @@ export const Logo = ({ onEditClick, isEditMode }) => {
         alt="Avatar"
       />
 
-      <h3 className="text-2xl font-bold">Doctor Name</h3>
-      <p className="text-xl text-blue-500">Specification</p>
-
+      <h3 className="text-2xl font-bold">Ravi Patil</h3>
+      
       <div className="w-full flex flex-col gap-4 mt-4">
-        {/* Profile details remain the same */}
+       
         <span className="flex flex-col">
-        QUALIFICATION
-        <p className="border p-2 rounded-md hover:bg-blue-500 hover:text-black transition-all duration-300 cursor-pointer">
-          qualification
+        <strong>AGE</strong>
+        <p className="border border-grey-200 p-2 rounded-md hover:bg-blue-500 hover:text-black transition-all duration-300 cursor-pointer">
+          21
         </p>
       </span>
       <span className="flex flex-col">
-        HOSPITAL NAME
-        <p className="border p-2 rounded-md hover:bg-blue-500 hover:text-black transition-all duration-300 cursor-pointer">
-          DYP HOSPITAL
+      <strong>CONTACT NO</strong> 
+        <p className="border border-grey-200 p-2 rounded-md hover:bg-blue-500 hover:text-black transition-all duration-300 cursor-pointer">
+         8421456630
         </p>
       </span>
       <span className="flex flex-col">
-        EMAIL
-        <p className="border p-2 rounded-md hover:bg-blue-500 hover:text-black transition-all duration-300 cursor-pointer">
+      <strong>EMAIL</strong> 
+        <p className="border border-grey-200 p-2 rounded-md hover:bg-blue-500 hover:text-black transition-all duration-300 cursor-pointer">
           radhey@gmail.com
         </p>
       </span>
 
       <span className="flex flex-col">
-        PHONE
-        <p className="border p-2 rounded-md hover:bg-blue-500 hover:text-black transition-all duration-300 cursor-pointer">
-          9876543210
+      <strong>Address</strong> 
+        <p className="border border-grey-200 p-2 rounded-md hover:bg-blue-500 hover:text-black transition-all duration-300 cursor-pointer">
+          Address
         </p>
       </span>
        
@@ -198,9 +197,9 @@ const Skeleton = ({ selectedLink, isEditMode }) => {
 
     // Otherwise, use the original switch statement
     switch (selectedLink) {
-      case "/hospitalsidebar/dashboard":
+      case "/patientsidebar/dashboard":
         return <Dashboard />; 
-      case "/hospitalsidebar/info":
+      case "/patientsidebar/info":
         return <DoctorInfo />;
       case "/logout":
         return (
@@ -220,4 +219,4 @@ const Skeleton = ({ selectedLink, isEditMode }) => {
   );
 };
 
-export default DoctorSidebar;
+export default PatientSidebar;

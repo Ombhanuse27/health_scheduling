@@ -65,7 +65,7 @@ const Doctordashboard = ({ children }) => {
         ) : (
           <div className="p-6 md:px-20 py-10 flex flex-col gap-4 flex-1 w-full h-full">
             <h2 className="text-5xl font-extrabold mb-6   text-red-600 text-center uppercase tracking-wide">
-              Appointment List
+              Appointment History
             </h2>
  
             
@@ -98,11 +98,11 @@ const Doctordashboard = ({ children }) => {
     <TableHead className="bg-gradient-to-r from-gray-200 to-gray-300">
       <TableRow>
         <TableCell style={{ fontSize: "1.5rem", fontWeight: "bold" }}>Appointment No</TableCell>
-        <TableCell style={{ fontSize: "1.5rem", fontWeight: "bold" }}>Full Name</TableCell>
-        <TableCell style={{ fontSize: "1.5rem", fontWeight: "bold" }}>Age</TableCell>
+        <TableCell style={{ fontSize: "1.5rem", fontWeight: "bold" }}>Date</TableCell>
         <TableCell style={{ fontSize: "1.5rem", fontWeight: "bold" }}>Symptoms</TableCell>
+        <TableCell style={{ fontSize: "1.5rem", fontWeight: "bold" }}>Doctor Name</TableCell>
+        <TableCell style={{ fontSize: "1.5rem", fontWeight: "bold" }}>Hospital Name</TableCell>
         <TableCell style={{ fontSize: "1.5rem", fontWeight: "bold" }}>Contact No</TableCell>
-        <TableCell style={{ fontSize: "1.5rem", fontWeight: "bold" }}>Appointment Time</TableCell>
       </TableRow>
     </TableHead>
     <TableBody>
@@ -110,11 +110,11 @@ const Doctordashboard = ({ children }) => {
         filteredRecords.map((record, index) => (
           <TableRow key={index}>
             <TableCell style={{ fontSize: "1.25rem" }}>{record.appointmentNumber}</TableCell>
-            <TableCell style={{ fontSize: "1.25rem" }}>{record.fullName}</TableCell>
-            <TableCell style={{ fontSize: "1.25rem" }}>{record.age}</TableCell>
+            <TableCell style={{ fontSize: "1.25rem" }}>{record.appointmentDate}</TableCell>
+            <TableCell style={{ fontSize: "1.25rem" }}>{record.symptoms}</TableCell>
             <TableCell style={{ fontSize: "1.25rem" }}>{record.symptoms}</TableCell>
             <TableCell style={{ fontSize: "1.25rem" }}>{record.contactNumber}</TableCell>
-            <TableCell style={{ fontSize: "1.25rem" }}>{record.appointmentTime}</TableCell>
+            <TableCell style={{ fontSize: "1.25rem" }}>{record.contactNumber}</TableCell>
           </TableRow>
         ))
       ) : (

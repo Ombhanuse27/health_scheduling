@@ -25,10 +25,6 @@ const HospitalInfo = () => {
   const [errors, setErrors] = useState({});
   const [uploading, setUploading] = useState(false);
 
-<<<<<<< HEAD
-=======
- 
->>>>>>> 1b5a0a7751a70ea0c63cf1fdf0b74478a5637df8
   useEffect(() => {
     const fetchHospitals = async () => {
       try {
@@ -161,7 +157,7 @@ const HospitalInfo = () => {
             </div>
 
             <div className="flex flex-col">
-            <label htmlFor="hospitalId" className="block text-sm font-medium text-black mb-1">
+            <label htmlFor="hospitalId" className="block text-sm  font-medium text-black mb-1">
               Select Hospital (Admin Username)
             </label>
             <select
@@ -169,7 +165,7 @@ const HospitalInfo = () => {
               name="hospitalId"  // Fix: Corrected the name attribute
               value={formData.hospitalId}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg  text-gray-700 focus:ring-2 focus:ring-blue-500"
               required
             >
               <option value="">Select a hospital</option>

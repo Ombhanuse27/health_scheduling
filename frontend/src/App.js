@@ -13,6 +13,7 @@ import HospitalDetails from "./components/Hospital/HospitalDetails";
 import './App.css';
 import DoctorSidebar from "./_components/DoctorSidebar";
 import DoctorInfo from "./components/Doctorsidebar/DoctorInfo";
+import PatientSidebar from "./_components/PatientSidebar";
 
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
         <Route path="/hospital" element={<Hospital />} />
         <Route path="/hospitalsidebar" element={<Hospitalsidebar />} />
         <Route path="/doctorsidebar" element={<DoctorSidebar />} />
+        <Route path="/patientsidebar" element={<PatientSidebar />} />
           <Route path="/opdForm" element={<> <OpdForm /></>} />
           <Route path="/hospital/hospital-details" element={<><HospitalDetails /></>}/>
           <Route path="/doctorInfo" element={<DoctorInfo />} />

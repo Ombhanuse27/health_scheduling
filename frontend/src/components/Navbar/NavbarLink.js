@@ -8,38 +8,35 @@ import { Link } from 'react-router-dom'
 
 function NavbarLink() {
   const [isOpen, setIsOpen] = useState(false);
-
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
-
   const navLinks = [
     { to: "/", label: "Home" },
     { to: "/hospital", label: "Hospitals List" },
     { to: "/opdForm", label: "Book Appointment" },
     { to: "/login", label: "Login / Register" }
   ];
-
   return (
     <Navbar 
       bg="white" 
       expand="lg" 
-      className='fixed top-0 left-0 w-full z-50 shadow-md'
+      className='fixed top-0 left-0 w-full z-50 shadow-md py-2'
     >
       <Container fluid className='nav-container max-w-screen-xl mx-auto px-4 flex items-center justify-between'>
-        {/* Logo */}
-        <Navbar.Brand className='navbar-brand mr-auto'>
-          <Link to="/">
+     
+        <Navbar.Brand className='navbar-brand mr-0 flex items-center'>
+          <Link to="/" className='flex items-center'>
             <img 
               id="logo-img" 
               src={Logo} 
               alt="Health-schedule" 
-              className='w-48 h-36 object-contain'
+              className='w-40 h-20 object-contain'
             />
           </Link>
         </Navbar.Brand>
 
-        {/* Mobile Menu Toggle */}
+        
         <div className='lg:hidden'>
           <button 
             onClick={toggleMenu} 
@@ -51,19 +48,19 @@ function NavbarLink() {
             />
           </button>
         </div>
-
-        {/* Navigation Links */}
+        
         <Navbar.Collapse 
           id="basic-navbar-nav" 
           className={`
             lg:flex lg:items-center lg:w-auto 
             fixed lg:static 
-            top-20 left-0 right-0 
+            top-20 right-0 
             bg-white lg:bg-transparent 
             ${isOpen ? 'block' : 'hidden'}
             lg:block
             shadow-lg lg:shadow-none
             p-4 lg:p-0
+            lg:ml-auto
           `}
         >
           <Nav className='flex flex-col lg:flex-row items-center gap-4 lg:gap-6'>
@@ -71,7 +68,15 @@ function NavbarLink() {
               <Link 
                 key={index} 
                 to={link.to} 
-                className='nav-link text-lg font-bold text-blue-600 hover:text-red-500 transition-colors'
+                className='
+                  nav-link 
+                  text-lg 
+                  lg:text-xl 
+                  font-bold 
+                  text-blue-600 
+                  hover:text-red-500 
+                  transition-colors
+                '
                 onClick={() => setIsOpen(false)}
               >
                 {link.label}

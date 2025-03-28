@@ -20,9 +20,9 @@
     margin: auto;
 }
 
-/* Move logo to the left */
+
 .navbar-brand {
-    margin-right: auto; /* Pushes other elements to the right */
+    margin-right: auto; 
     padding-left: 0;
 }
 
@@ -31,12 +31,12 @@
     height: 150px;
 }
 
-/* Navbar items */
+
 .navbar-navv {
     display: flex;
     gap: 30px;
     align-items: center;
-    justify-content: flex-end; /* Aligns nav items to the right */
+    justify-content: flex-end; 
     flex-grow: 1;
 }
 

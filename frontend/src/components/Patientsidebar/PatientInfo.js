@@ -1,16 +1,12 @@
 import { useState, useEffect } from "react";
 import { submitOpdForm } from "../../api/api";
 
-const DoctorInfo = () => {
+const PatientInfo = () => {
   const [formData, setFormData] = useState({
-    hospitalImage: "",
-    hospitalId: "",
-    hospitalName: "",
-    hospitalStartTime: "",
-    hospitalEndTime: "",
-    Specialist: "",
+    patientImage: "",
+    patientId: "",
+    patientName: "",
     contactNumber: "",
-    emergencyContact: "",
     email: "",
     address: "",
   
@@ -19,7 +15,7 @@ const DoctorInfo = () => {
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState({});
 
-  // Simulate loading for skeleton
+ 
   useEffect(() => {
     setTimeout(() => {
       setLoading(false);
@@ -33,7 +29,7 @@ const DoctorInfo = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await submitOpdForm(formData.hospitalId, formData);
+      await submitOpdForm(formData.patientId, formData);
       alert("OPD Form submitted successfully!");
     } catch (error) {
       alert("Error submitting OPD Form");
@@ -44,7 +40,7 @@ const DoctorInfo = () => {
     <div className="w-full flex justify-center items-center min-h-screen bg-gradient-to-br ">
       <div className="w-full bg-blue-200 dark:bg-neutral-800 shadow-2xl rounded-2xl p-10  overflow-y-auto max-h-[90vh] custom-scrollbar mb-20">
         <h2 className="text-5xl font-bold text-center text-gray-800 dark:text-white mb-8">
-          Doctor Profile
+          Patient Profile
         </h2>
 
         {loading ? (
@@ -165,4 +161,4 @@ const DoctorInfo = () => {
   );
 };
 
-export default DoctorInfo;
+export default PatientInfo;

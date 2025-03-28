@@ -15,11 +15,11 @@ const Hospital = () => {
       try {
         const data = await getHospitalsData(); // Fetch hospitals from API
         const formattedHospitals = data.map((hospital) => ({
-          hospital_img: hospital.hospitalImage,
-          hospital_name: hospital.hospitalName,
-          hospital_location: hospital.address,
-          hospital_phone_number: hospital.contactNumber,
-          hospital_speciality: hospital.Specialist,
+          hospital_img: hospital.hospitalImage || "https://media.istockphoto.com/id/1524913019/vector/hospital-building-vector-illustration-in-flat-style-design.jpg?s=612x612&w=0&k=20&c=WVl257GwZBvckU_e5SNu0CCG3gL9EbCMZPwINLcxdj4=",
+          hospital_name: hospital.hospitalName ||"Hospital Name",
+          hospital_location: hospital.address || "Hospital Address",
+          hospital_phone_number: hospital.contactNumber ||"8421456630",
+          hospital_speciality: hospital.Specialist || "Specialist",
 
         }));
 

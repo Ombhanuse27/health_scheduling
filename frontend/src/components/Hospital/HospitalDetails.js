@@ -6,6 +6,7 @@ import { faMapMarkerAlt, faPhoneAlt, faHospital, faClock, faStar, faStarHalfAlt,
 import MegaDoctors from '../Doctor/MegaDoctors';
 
 
+
 const HospitalDetails = () => {
   return (
 
