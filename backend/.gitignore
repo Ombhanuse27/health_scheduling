@@ -1,0 +1,23 @@
+# Node modules
+node_modules/
+npm-debug.log
+yarn.lock
+package-lock.json
+
+# Environment Variables
+.env
+
+# Build files
+/build/
+/dist/
+
+# Logs
+logs/
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+JWT_SECRET
+PORT
+MONGO_URI
