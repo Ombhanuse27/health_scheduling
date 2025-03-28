@@ -9,12 +9,11 @@ const DoctorInfo = () => {
     hospitalStartTime: "",
     hospitalEndTime: "",
     Specialist: "",
-    opdFees: "",
     contactNumber: "",
     emergencyContact: "",
     email: "",
     address: "",
-    paymentMode: "",
+  
   });
 
   const [loading, setLoading] = useState(true);
@@ -43,7 +42,7 @@ const DoctorInfo = () => {
 
   return (
     <div className="w-full flex justify-center items-center min-h-screen bg-gradient-to-br ">
-      <div className="w-full bg-white dark:bg-neutral-800 shadow-2xl rounded-2xl p-10 border border-neutral-200 dark:border-neutral-700 overflow-y-auto max-h-[90vh] custom-scrollbar mb-20">
+      <div className="w-full bg-blue-200 dark:bg-neutral-800 shadow-2xl rounded-2xl p-10  overflow-y-auto max-h-[90vh] custom-scrollbar mb-20">
         <h2 className="text-5xl font-bold text-center text-gray-800 dark:text-white mb-8">
           Hospital Details
         </h2>

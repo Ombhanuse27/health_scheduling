@@ -91,11 +91,12 @@ const AdminDashboard = ({children}) => {
           ))}
         </select>
       </div>
-
+          
           
             <table className="w-full border-collapse bg-white rounded-lg overflow-hidden shadow-lg mt-6">
               <thead>
                 <tr className="bg-gradient-to-r from-gray-200 to-gray-300 text-gray-700 text-lg">
+                  <th className="p-4 text-left">Sr.No</th>
                   <th className="p-4 text-left">Full Name</th>
                   <th className="p-4 text-left">Age</th>
                   <th className="p-4 text-left">Symptoms</th>
@@ -108,6 +109,7 @@ const AdminDashboard = ({children}) => {
               {filteredRecords.length > 0 ? (
             filteredRecords.map((record, index) => (
               <tr key={index} className="border text-black  ">
+                 <td className="border p-2">{record.fullName}</td>
                 <td className="border p-2">{record.fullName}</td>
                 <td className="border p-2">{record.age}</td>
                 <td className="border p-2">{record.symptoms}</td>

@@ -20,7 +20,7 @@ const HospitalInfo = () => {
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState({});
 
-  // Simulate loading for skeleton
+ 
   useEffect(() => {
     setTimeout(() => {
       setLoading(false);
@@ -79,7 +79,7 @@ const HospitalInfo = () => {
                   <img
                     src={formData.hospitalImage}
                     alt="Hospital"
-                    className="w-full h-full rounded-full object-cover"
+                    className="w-full h-full rounded-2 object-cover"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">
