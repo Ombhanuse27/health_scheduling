@@ -77,6 +77,11 @@ const OpdForm = () => {
   };
 
   const handleSubmit = async (e) => {
+
+    const confirmBooking = window.confirm("Do you want to book an appointment?");
+  if (!confirmBooking) {
+    return; // Exit if the user cancels
+  }
     e.preventDefault();
   
     const now = new Date();
