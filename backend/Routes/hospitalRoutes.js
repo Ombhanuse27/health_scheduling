@@ -1,28 +1,43 @@
 const express = require("express");
-const Doctor = require("../model/Doctor");
+
+const Hospital = require("../model/adminModel");
 
 const router = express.Router();
 
-// Add a new hospital
-router.post("/dashboard/add", async (req, res) => {
+
+router.get("/getHospitalsData", async (req, res) => {
   try {
-    const hospital = new Doctor(req.body);
-    await hospital.save();
-    res.status(201).json(hospital);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const hospitals = await Hospital.find(); // Fetch all hospitals from DB
+    res.json(hospitals);
+  } catch (error) {
+    res.status(500).json({ error: "Error fetching hospital data" });
   }
 });
 
-// Get all hospitals with bed availability
-router.get("/", async (req, res) => {
+
+router.post("/hospitalData/:hospitalId", async (req, res) => {
   try {
-    const hospitals = await Doctor.find();
-    res.json(hospitals);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const { hospitalId } = req.params;
+    const hospitalData = req.body;
+
+    // Find the hospital by ID and update the data
+    let hospital = await Hospital.findById(hospitalId);
+
+    if (!hospital) {
+      return res.status(404).json({ message: "Hospital not found" });
+    }
+
+    // Update hospital details
+    Object.assign(hospital, hospitalData);
+    await hospital.save();
+
+    res.json({ message: "Hospital information updated successfully", hospital });
+  } catch (error) {
+    console.error("Error updating hospital info:", error);
+    res.status(500).json({ message: "Error updating hospital info", error: error.message });
   }
 });
+
 
 module.exports = router;
 

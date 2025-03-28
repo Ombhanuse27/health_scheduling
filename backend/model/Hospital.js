@@ -1,15 +1,19 @@
 const mongoose = require("mongoose");
 
-const HospitalSchema = new mongoose.Schema({
-  name: String,
-  location: String,
-  total_beds: Number,
-  available_beds: Number,
-  icu_beds: Number,
-  emergency_beds: Number,
-  general_beds: Number,
-  waiting_list: [{ type: mongoose.Schema.Types.ObjectId, ref: "Patient" }]
+const hospitalSchema = new mongoose.Schema({
+  hospitalImage: { type: String, default: "" },
+  hospitalId: { type: String, required: true, unique: true },
+  hospitalName: { type: String, required: true },
+  hospitalStartTime: { type: String, required: true },
+  hospitalEndTime: { type: String, required: true },
+  Specialist: { type: String, required: true },
+  opdFees: { type: Number, required: true },
+  contactNumber: { type: String, required: true },
+  emergencyContact: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  address: { type: String, required: true },
+  paymentMode: { type: String, required: true }
 });
 
-
-module.exports = mongoose.model("Hospital", HospitalSchema);
+const Hospital = mongoose.model("Hospital", hospitalSchema);
+module.exports = Hospital;

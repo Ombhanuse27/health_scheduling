@@ -3,11 +3,12 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
-const patientRoutes = require("./Routes/patientRoutes");
+
 const hospitalRoutes = require("./Routes/hospitalRoutes");
 const adminRoutes = require("./Routes/adminRoutes");
 const opdRoutes = require("./Routes/opdRoutes");
-const DoctorRoutes = require("./Routes/hospitalRoutes");
+
+
 const opdModel = require("./model/opdModel");
 const Counter = require("./model/counterModel");
 
@@ -140,12 +141,14 @@ app.post("/submitOpdForm", async (req, res) => {
 
 
 // **Routes**
-app.use("/api/patients", patientRoutes);
-app.use("/api/hospitals", hospitalRoutes);
+
+
 app.use("/api/admin", adminRoutes);
 app.use("/api/auth/dashboard", opdRoutes);
 app.use("/api/", opdRoutes);
-app.use("/api/dashboard", DoctorRoutes);
+app.use("/api/", hospitalRoutes);
+app.use("/api/getHospitalsData", hospitalRoutes);
+
 app.use("/api/getHospitals", adminRoutes);
 
 app.get("/", (req, res) => res.send("Hospital Queuing System Running"));

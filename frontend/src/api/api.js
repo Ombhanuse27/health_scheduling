@@ -14,6 +14,30 @@ export const submitOpdForm = async (hospitalId, data) => {
   }
 };
 
+export const getHospitalsData = async (hospitalId) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/getHospitalsData`);
+    return response.data; // Axios already parses JSON
+  } catch (error) {
+    console.error("Error fetching hospital data:", error.response?.data || error.message);
+    throw error;
+  }
+}
+
+
+
+export const submitHospitalInfo = async (hospitalId, data) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/hospitalData/${hospitalId}`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Error submitting hospital info:", error.response?.data || error.message);
+    throw error;
+  }
+}
+
+
+
 // export const submitDocForm = (data) => axios.post(`${BASE_URL}/dashboard/add`, data);
 export const submitDocForm = async (data) => {
   try {

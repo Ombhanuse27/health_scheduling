@@ -20,7 +20,7 @@ const HospitalCard = ({ hospital_img, hospital_name, hospital_location, hospital
 
   <Link to={`/hospital/hospital-details`} className="hospital-link">
     <div className='hospital-card1'>
-      <img id='hospital-card-img1' src='https://media.istockphoto.com/id/1524913019/vector/hospital-building-vector-illustration-in-flat-style-design.jpg?s=612x612&w=0&k=20&c=WVl257GwZBvckU_e5SNu0CCG3gL9EbCMZPwINLcxdj4=' alt={hospital_name} />
+      <img id='hospital-card-img1' src={hospital_img} alt={hospital_name} />
       <div className="hospital-info1">
         <h3 id='hospital_name1'>
           <FontAwesomeIcon icon={faHospital} style={{ color: '#3498DB' }} /> {hospital_name}
