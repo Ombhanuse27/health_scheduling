@@ -15,7 +15,7 @@ const Hospital = () => {
       try {
         const data = await getHospitalsData(); // Fetch hospitals from API
         const formattedHospitals = data.map((hospital) => ({
-          hospital_img: hospital.hospitalImage,
+          hospital_img: hospital.hospitalImage|| doctorone,
           hospital_name: hospital.hospitalName,
           hospital_location: hospital.address,
           hospital_phone_number: hospital.contactNumber,

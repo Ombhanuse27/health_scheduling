@@ -12,6 +12,7 @@ const opdSchema = new mongoose.Schema({
   bloodGroup: String,
   opdFees: Number,
   paymentMode: String,
+  preferredSlot: String, // New field for preferred slot
   hospitalId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hospital', required: true },
   hospitalName:String, // Reference to Hospital
   appointmentNumber: { type: Number, unique: true },// Auto-generated number

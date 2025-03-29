@@ -25,10 +25,6 @@ const HospitalInfo = () => {
   const [errors, setErrors] = useState({});
   const [uploading, setUploading] = useState(false);
 
-<<<<<<< HEAD
-=======
- 
->>>>>>> 1b5a0a7751a70ea0c63cf1fdf0b74478a5637df8
   useEffect(() => {
     const fetchHospitals = async () => {
       try {
