@@ -3,7 +3,7 @@ import { faPhone } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faGithub, faLinkedin, faTwitter } from '@fortawesome/free-brands-svg-icons'
 import { Link } from 'react-router-dom'
-import Logo from '../../images/logo.png'
+import Logo from '../../images/logo1.png'
 
 function Footer() {
   const quickLinks = [
@@ -25,7 +25,7 @@ function Footer() {
   ]
 
   return (
-    <div className="footer bg-sky-100 text-gray-800">
+    <div className="footer bg-sky-200 text-gray-800">
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-4 gap-8 py-12">
           {/* About Section */}

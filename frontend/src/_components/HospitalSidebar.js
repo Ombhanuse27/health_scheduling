@@ -56,7 +56,7 @@ export function HospitalSidebar() {
   return (
     <div
       className={cn(
-        "rounded-md flex flex-col md:flex-row bg-gray-100 dark:bg-neutral-800 w-screen h-screen flex-1 border border-neutral-200 dark:border-neutral-700 overflow-hidden"
+        "rounded-md flex flex-col md:flex-row bg-gray-100 dark:bg-neutral-800 w-screen h-screen flex-1 border border-neutral-200 dark:border-neutral-700 overflow-hidden mt-48 md:mt-40 lg:mt-32"
       )}
     >
       {/* ✅ Sidebar */}
@@ -161,10 +161,10 @@ const Skeleton = ({ selectedLink }) => {
         return (
          <HospitalInfo  />
         );
-      case "/logout":
-        return (
-          <div className="text-white text-xl font-bold">🚪 Logout Page Content</div>
-        );
+        case "/logout":
+          window.location.href = "http://localhost:3000/"; // ✅ Correct usage
+          break;
+        
       default:
         return <Dashboard />; 
     }
@@ -172,7 +172,7 @@ const Skeleton = ({ selectedLink }) => {
 
   return (
     <div className="flex flex-1">
-      <div className="p-2 md:px-20 py-10 rounded-tl-2xl border border-neutral-200 dark:border-neutral-700 bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900 dark:bg-neutral-900 flex flex-col gap-2 flex-1 w-full h-full">
+      <div className="p-2 md:px-20 py-10 rounded-tl-2xl border border-neutral-200 dark:border-neutral-700 bg-blue-200 flex flex-col gap-2 flex-1 w-full h-full">
       
         {/* {!selectedLink ? (
           <>
@@ -199,7 +199,7 @@ const Skeleton = ({ selectedLink }) => {
           </>
         ) : ( */}
           
-          <div className="text-white text-xl font-bold mt-5">{renderContent()}</div>
+          <div className="text-white bg-blue-200 text-xl font-bold mt-5">{renderContent()}</div>
         {/*  )} */}
       </div>
     </div>

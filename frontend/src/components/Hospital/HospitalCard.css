@@ -1,5 +1,6 @@
+
 .hospital-container1 {
-    background: linear-gradient(90deg, #EBF3FF 0%, #E3EEFF 100%);
+   
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
@@ -35,7 +36,7 @@
 #hospital-card-img1 {
     width: 100%;
     height: 200px;
-    object-fit: cover;
+    /* object-fit: cover; */
     border-bottom: 3px solid #007bff; 
 }
 

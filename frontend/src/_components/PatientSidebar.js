@@ -201,10 +201,10 @@ const Skeleton = ({ selectedLink, isEditMode }) => {
         return <Dashboard />; 
       case "/patientsidebar/info":
         return <DoctorInfo />;
-      case "/logout":
-        return (
-          <div className="text-white text-xl font-bold">🚪 Logout Page Content</div>
-        );
+        case "/logout":
+          window.location.href = "http://localhost:3000/"; // ✅ Correct usage
+          break;
+        
       default:
         return <Dashboard />; 
     }

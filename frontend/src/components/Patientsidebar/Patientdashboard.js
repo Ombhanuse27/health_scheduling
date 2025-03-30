@@ -50,7 +50,7 @@ const Doctordashboard = ({ children }) => {
 
   return (
     <div className="flex flex-1">
-      <div className="p-2  bg-blue-200 flex flex-col gap-2 flex-1 w-full h-full">
+      <div className="p-2  bg-blue-300 flex flex-col gap-2 flex-1 w-full h-full  ">
         {loading ? (
           <>
             <div className="h-12 w-80 mb-6 ml-auto">
@@ -69,7 +69,7 @@ const Doctordashboard = ({ children }) => {
             </h2>
  
             
-            {/* Date Filter */}
+        
             <div className="mb-4 flex justify-between items-center">
               <label className="text-lg font-semibold mr-2 text-black">Select Date:</label>
               <Select

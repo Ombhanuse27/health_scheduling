@@ -44,7 +44,7 @@ function NavbarLink() {
           >
             <FontAwesomeIcon 
               icon={isOpen ? faTimes : faBars} 
-              className='text-blue-600'
+              className='text-blue-600 text-4xl'
             />
           </button>
         </div>
@@ -63,7 +63,7 @@ function NavbarLink() {
             lg:ml-auto
           `}
         >
-          <Nav className='flex flex-col lg:flex-row items-center gap-4 lg:gap-6'>
+          <Nav className='flex flex-col lg:flex-row items-center gap-4 lg:gap-10'>
             {navLinks.map((link, index) => (
               <Link 
                 key={index} 
@@ -71,10 +71,10 @@ function NavbarLink() {
                 className='
                   nav-link 
                   text-lg 
-                  lg:text-xl 
-                  font-bold 
-                  text-blue-600 
-                  hover:text-red-500 
+                  lg:text-2xl 
+                  font-semibold 
+                  text-blue-800 
+                  hover:text-orange-500 
                   transition-colors
                 '
                 onClick={() => setIsOpen(false)}
@@ -83,14 +83,7 @@ function NavbarLink() {
               </Link>
             ))}
 
-            {/* Contact Button for Mobile */}
-            <div className='lg:hidden mt-4 flex items-center gap-3'>
-              <FontAwesomeIcon 
-                icon={faPhoneAlt} 
-                className='text-2xl text-blue-600'
-              />
-              <span className='text-lg font-semibold'>+91 1234567890</span>
-            </div>
+            
           </Nav>
         </Navbar.Collapse>
       </Container>

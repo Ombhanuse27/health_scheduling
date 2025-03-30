@@ -27,7 +27,7 @@ function LoginForm() {
     };
 
     return (
-     
+     <div>
             <div className="login2">
                 <div className="container2">
                     <img src={Logo} alt="" />
@@ -60,7 +60,8 @@ function LoginForm() {
 
                     </div>
                 </div>
-                {/* <Footer /> */}
+                </div>
+               <Footer/>
             </div>
         
     )

@@ -17,12 +17,13 @@ import { motion } from "motion/react";
 import { cn } from "../lib/utils";
 import Dashboard from "../components/Doctorsidebar/Doctordashboard";
 import DoctorInfo from "../components/Doctorsidebar/DoctorInfo";
+import Landingpage from "../components/LandingPage/Landingpage";
 
 export function DoctorSidebar() {
   const links = [
     {
       label: "Dashboard",
-      to: "/hospitalsidebar/dashboard",
+      to: "/DoctorSidebar/dashboard",
       icon: (
         <IconBrandTabler className="text-neutral-700 dark:text-neutral-200 h-8 w-6 shrink-0" />
       ),
@@ -36,21 +37,22 @@ export function DoctorSidebar() {
     },
   ];
 
-  // State to track selected link URL and edit mode
+ 
   const [selectedLink, setSelectedLink] = useState(null);
   const [open, setOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
 
-  // Handler for edit icon click
+
   const handleEditClick = () => {
     setIsEditMode(true);
-    setSelectedLink("/hospitalsidebar/info");
+    setSelectedLink("/PatientSidebar/info");
   };
+  
 
   return (
     <div
       className={cn(
-        "rounded-md flex flex-col md:flex-row bg-gray-100 dark:bg-blue-800 w-screen h-screen flex-1 border border-neutral-200 dark:border-neutral-700 overflow-hidden"
+        "rounded-md flex flex-col md:flex-row bg-gray-100 dark:bg-blue-800 w-screen h-screen flex-1 border border-neutral-200 dark:border-neutral-700 overflow-hidden mt-48 md:mt-40 lg:mt-32"
       )}
     >
       {/* Sidebar */}
@@ -88,11 +90,11 @@ export function DoctorSidebar() {
               ))}
             </div>
           </div>
-       
+        
         </SidebarBody>
       </Sidebar>
 
-      {/* Render content dynamically inside Skeleton */}
+   
       <div className="flex flex-1">
         <Skeleton 
           selectedLink={selectedLink} 
@@ -128,34 +130,33 @@ export const Logo = ({ onEditClick, isEditMode }) => {
         alt="Avatar"
       />
 
-      <h3 className="text-2xl font-bold">Doctor Name</h3>
-      <p className="text-xl text-blue-500">Specification</p>
-
+      <h3 className="text-2xl font-bold">Ravi Patil</h3>
+      
       <div className="w-full flex flex-col gap-4 mt-4">
-        {/* Profile details remain the same */}
+       
         <span className="flex flex-col">
-        QUALIFICATION
-        <p className="border p-2 rounded-md hover:bg-blue-500 hover:text-black transition-all duration-300 cursor-pointer">
-          qualification
+        <strong>AGE</strong>
+        <p className="border border-grey-200 p-2 rounded-md hover:bg-blue-500 hover:text-black transition-all duration-300 cursor-pointer">
+          21
         </p>
       </span>
       <span className="flex flex-col">
-        HOSPITAL NAME
-        <p className="border p-2 rounded-md hover:bg-blue-500 hover:text-black transition-all duration-300 cursor-pointer">
-          DYP HOSPITAL
+      <strong>CONTACT NO</strong> 
+        <p className="border border-grey-200 p-2 rounded-md hover:bg-blue-500 hover:text-black transition-all duration-300 cursor-pointer">
+         8421456630
         </p>
       </span>
       <span className="flex flex-col">
-        EMAIL
-        <p className="border p-2 rounded-md hover:bg-blue-500 hover:text-black transition-all duration-300 cursor-pointer">
+      <strong>EMAIL</strong> 
+        <p className="border border-grey-200 p-2 rounded-md hover:bg-blue-500 hover:text-black transition-all duration-300 cursor-pointer">
           radhey@gmail.com
         </p>
       </span>
 
       <span className="flex flex-col">
-        PHONE
-        <p className="border p-2 rounded-md hover:bg-blue-500 hover:text-black transition-all duration-300 cursor-pointer">
-          9876543210
+      <strong>Address</strong> 
+        <p className="border border-grey-200 p-2 rounded-md hover:bg-blue-500 hover:text-black transition-all duration-300 cursor-pointer">
+          Address
         </p>
       </span>
        
@@ -191,21 +192,21 @@ export const LogoIcon = () => {
 
 const Skeleton = ({ selectedLink, isEditMode }) => {
   const renderContent = () => {
-    // If in edit mode, always return DoctorInfo
+   
     if (isEditMode) {
       return <DoctorInfo />;
     }
 
-    // Otherwise, use the original switch statement
+   
     switch (selectedLink) {
-      case "/hospitalsidebar/dashboard":
+      case "/patientsidebar/dashboard":
         return <Dashboard />; 
-      case "/hospitalsidebar/info":
+      case "/patientsidebar/info":
         return <DoctorInfo />;
-      case "/logout":
-        return (
-          <div className="text-white text-xl font-bold">🚪 Logout Page Content</div>
-        );
+        case "/logout":
+          window.location.href = "http://localhost:3000/"; 
+          break;
+        
       default:
         return <Dashboard />; 
     }

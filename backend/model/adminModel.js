@@ -5,17 +5,17 @@ const AdminSchema = new mongoose.Schema({
   password: { type: String, required: true },
   opdForms: [{ type: mongoose.Schema.Types.ObjectId, ref: 'opdModel' }],
   hospitalImage: { type: String, default: "" },
-  hospitalId: { type: String, required: true, unique: true },
-  hospitalName: { type: String, required: true },
-  hospitalStartTime: { type: String, required: true },
-  hospitalEndTime: { type: String, required: true },
-  Specialist: { type: String, required: true },
-  opdFees: { type: Number, required: true },
-  contactNumber: { type: String, required: true },
-  emergencyContact: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  address: { type: String, required: true },
-  paymentMode: { type: String, required: true }
+  hospitalId: { type: String},
+  hospitalName: { type: String },
+  hospitalStartTime: { type: String},
+  hospitalEndTime: { type: String },
+  Specialist: { type: String },
+  opdFees: { type: Number },
+  contactNumber: { type: String},
+  emergencyContact: { type: String },
+  email: { type: String},
+  address: { type: String },
+  paymentMode: { type: String}
 });
 
 module.exports = mongoose.model("adminModel", AdminSchema);

@@ -1,9 +1,10 @@
 .footer {
     padding: 0 0;
+    
     /* background-image: url(../../images//footerbg.jpg); */
     background-size: cover;
     background-position: center;
-    background-color: #5db1d8;
+    background-color: #4caedb;
     position: relative;
     overflow: hidden;
     z-index: 2;
