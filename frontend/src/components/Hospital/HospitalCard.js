@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMapMarkerAlt, faPhoneAlt, faHospital, faHeart, faClock ,faStar, faStarHalfAlt } from '@fortawesome/free-solid-svg-icons';
 
 
-const HospitalCard = ({ hospital_img, hospital_name, hospital_location, hospital_phone_number, hospital_speciality }) => {
+const HospitalCard = ({ hospital_img, hospital_name, hospital_location, hospital_phone_number, hospital_speciality,id }) => {
   console.log("HospitalCard ca:", {
     hospital_img,
     hospital_name,
@@ -18,7 +18,7 @@ const HospitalCard = ({ hospital_img, hospital_name, hospital_location, hospital
   
 <div className="hospital-container1">
 
-  <Link to={`/hospital/hospital-details`} className="hospital-link">
+<Link to={`/hospital/${id}`} className="hospital-card-link">
     <div className='hospital-card1'>
       <img id='hospital-card-img1' src={hospital_img} alt={hospital_name} />
       <div className="hospital-info1">

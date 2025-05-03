@@ -1,5 +1,6 @@
 .hospital-list-container{
-    background-color: white;
+    background: linear-gradient(90deg, #EBF3FF 0%, #E3EEFF 100%);
+    width: 100%;
 }
 .search-container {
     display: flex;

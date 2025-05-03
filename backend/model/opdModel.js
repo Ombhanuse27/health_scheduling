@@ -11,6 +11,7 @@ const opdSchema = new mongoose.Schema({
   symptoms: String,
   bloodGroup: String,
   opdFees: Number,
+  preferredSlot: String,
   paymentMode: String,
   preferredSlot: String, // New field for preferred slot
   hospitalId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hospital', required: true },

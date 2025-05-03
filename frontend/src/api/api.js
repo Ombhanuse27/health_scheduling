@@ -24,6 +24,20 @@ export const getHospitalsData = async (hospitalId) => {
   }
 }
 
+export const checkDuplicate = async (fullName) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/checkDuplicate`, {
+      fullName,
+
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error checking duplicates:", error);
+    return { exists: false };
+  }
+};
+
+
 
 
 export const submitHospitalInfo = async (hospitalId, data) => {

@@ -10,17 +10,22 @@
 }
 
 .container2 {
-    width: 60%; 
+    width: 80%; 
     height: 100%; 
     display: flex;
     margin-top: 50px;
+    padding: 20px 40px;
     justify-content: space-between;
     align-items: center;
     background-color: #fff; 
     border-radius: 20px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
 }
-
+h2{
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif, Tahoma, Verdana, sans-serif;
+    font-size: 40px;
+  
+}
 
 .container2 img {
     width: 50%;
@@ -59,9 +64,9 @@
 
 .inputs2 input {
     border-radius: 10px;
-    padding: 16px; /* Increased padding */
-    font-size: 18px; /* Increased font size */
-    font-weight: bold; /* Made input text bold */
+    padding: 16px; 
+    font-size: 18px; 
+    font-weight: bold; 
     border: 1px solid rgba(24, 45, 67, 0.655);
     outline: none;
     width: 100%;
@@ -127,11 +132,12 @@
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (max-width: 910px) {
     .container2 {
         flex-direction: column;
         padding: 20px;
-        height: auto; /* Adjust height for smaller screens */
+        height: auto; 
+        padding: 2px;
     }
 
     .container2 img {
@@ -141,6 +147,10 @@
     }
 
     .box-login2 {
+        width: 100%;
+        padding: 2px 0px;
+    }
+    .inputs1{
         width: 100%;
     }
 }

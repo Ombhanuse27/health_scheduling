@@ -15,15 +15,14 @@ import {
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { cn } from "../lib/utils";
-import Dashboard from "../components/Doctorsidebar/Doctordashboard";
-import DoctorInfo from "../components/Doctorsidebar/DoctorInfo";
-import Landingpage from "../components/LandingPage/Landingpage";
+import Dashboard from "../components/Patientsidebar/Patientdashboard";
+import DoctorInfo from "../components/Patientsidebar/PatientInfo";
 
-export function DoctorSidebar() {
+export function PatientSidebar() {
   const links = [
     {
       label: "Dashboard",
-      to: "/DoctorSidebar/dashboard",
+      to: "/PatientSidebar/dashboard",
       icon: (
         <IconBrandTabler className="text-neutral-700 dark:text-neutral-200 h-8 w-6 shrink-0" />
       ),
@@ -37,22 +36,21 @@ export function DoctorSidebar() {
     },
   ];
 
- 
+  // State to track selected link URL and edit mode
   const [selectedLink, setSelectedLink] = useState(null);
   const [open, setOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
 
-
+  // Handler for edit icon click
   const handleEditClick = () => {
     setIsEditMode(true);
     setSelectedLink("/PatientSidebar/info");
   };
-  
 
   return (
     <div
       className={cn(
-        "rounded-md flex flex-col md:flex-row bg-gray-100 dark:bg-blue-800 w-screen h-screen flex-1 border border-neutral-200 dark:border-neutral-700 overflow-hidden mt-48 md:mt-40 lg:mt-32"
+        "rounded-md flex flex-col md:flex-row bg-gray-100 dark:bg-blue-800 w-screen h-screen flex-1 border border-neutral-200 dark:border-neutral-700 overflow-hidden"
       )}
     >
       {/* Sidebar */}
@@ -192,19 +190,19 @@ export const LogoIcon = () => {
 
 const Skeleton = ({ selectedLink, isEditMode }) => {
   const renderContent = () => {
-   
+    // If in edit mode, always return DoctorInfo
     if (isEditMode) {
       return <DoctorInfo />;
     }
 
-   
+    // Otherwise, use the original switch statement
     switch (selectedLink) {
       case "/patientsidebar/dashboard":
         return <Dashboard />; 
       case "/patientsidebar/info":
         return <DoctorInfo />;
         case "/logout":
-          window.location.href = "http://localhost:3000/"; 
+          window.location.href = "http://localhost:3000/"; // ✅ Correct usage
           break;
         
       default:
@@ -221,4 +219,4 @@ const Skeleton = ({ selectedLink, isEditMode }) => {
   );
 };
 
-export default DoctorSidebar;
+export default PatientSidebar;

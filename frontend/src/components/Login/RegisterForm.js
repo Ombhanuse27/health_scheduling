@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Logo from '../../images/login.jpg'
 import { registerAdmin } from "../../api/api";
 import NavLink  from '../Navbar/NavbarLink';
+import Footer from '../Footer/Footer';
 import './RegisterForm.css';
 const Register = () => {
 
@@ -29,7 +30,7 @@ const Register = () => {
 
   return (
   
-    
+    <div>
  <div className="register1">
   <NavLink/>
                 <div className="container1">
@@ -64,10 +65,10 @@ const Register = () => {
                     </div>
                     <img src={Logo} alt="" />
                 </div>
-                
+               
             </div>
-
-   
+            <Footer/>
+            </div>
   );
 };
 

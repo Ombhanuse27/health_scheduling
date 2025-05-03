@@ -150,6 +150,7 @@ app.use("/api/", opdRoutes);
 app.use("/api/", hospitalRoutes);
 app.use("/api/getHospitalsData", hospitalRoutes);
 app.use("/api/getHospitals", adminRoutes);
+app.use("/api/checkDuplicate", opdRoutes);
 
 app.get("/", (req, res) => res.send("Hospital Queuing System Running"));
 

@@ -39,6 +39,22 @@ router.post("/opd/:hospitalId", async (req, res) => {
   }
 });
 
+router.post("/checkDuplicate", async (req, res) => {
+  const { fullName } = req.body;
+
+  try {
+    const existingEntry = await OPD.findOne({ fullName });
+    if (existingEntry) {
+      return res.status(200).json({ exists: true, message: "User already exists." });
+    } else {
+      return res.status(200).json({ exists: false });
+    }
+  } catch (error) {
+    console.error("Error checking duplicates:", error);
+    return res.status(500).json({ error: "Server error while checking duplicates." });
+  }
+});
+
 
 // Get all OPD records for Admin
 router.get("/dashboard", authMiddleware, async (req, res) => {

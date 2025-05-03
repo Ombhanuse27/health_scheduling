@@ -39,6 +39,7 @@
     padding: 5px 25px;
     display: flex;
     flex-direction: column;
+    gap: 10px;
 }
 
 .hospital-header {
@@ -47,8 +48,8 @@
     align-items: center;
 
 }
-#hospital-name2 {
-    font-size: 25px;
+#hospital_name2 {
+    font-size: 35px;
     font-weight: bold;
     color: #333;
 }
@@ -63,10 +64,10 @@
 
 .hospital-contact {
     display: flex;
-   gap:40px;
-    font-size: 15px;
+    gap:40px;
+    font-size: 20px;
     margin-top: 5px;
-    margin-left: 30px;
+    /* margin-left: 30px; */
 }
 
 

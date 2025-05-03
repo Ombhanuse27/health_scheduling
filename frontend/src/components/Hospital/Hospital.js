@@ -15,6 +15,7 @@ const Hospital = () => {
       try {
         const data = await getHospitalsData(); // Fetch hospitals from API
         const formattedHospitals = data.map((hospital) => ({
+          id: hospital._id,
           hospital_img: hospital.hospitalImage|| doctorone,
           hospital_name: hospital.hospitalName,
           hospital_location: hospital.address,
@@ -43,7 +44,7 @@ const Hospital = () => {
       </div>
       <div className="hospital-list">
         {HospitalList.map((hospital, index) => (
-          <HospitalCard key={index} {...hospital} />
+          <HospitalCard key={index}id={hospital.id} {...hospital} />
         ))}
       </div>
       <Footer />

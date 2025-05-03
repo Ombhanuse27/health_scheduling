@@ -1,9 +1,12 @@
+
 .hospital-container1 {
-    background-color: #f8f9fa; 
+   
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
     padding: 20px;
+    margin-top: 60px;
+   
 }
 
 .hospital-link {
@@ -33,7 +36,7 @@
 #hospital-card-img1 {
     width: 100%;
     height: 200px;
-    object-fit: cover;
+    /* object-fit: cover; */
     border-bottom: 3px solid #007bff; 
 }
 

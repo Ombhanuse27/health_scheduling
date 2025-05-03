@@ -1,5 +1,7 @@
+
 import { useEffect, useState, useRef } from "react";
-import { submitOpdForm, getHospitals } from "../api/api"; 
+import { submitOpdForm, getHospitals,checkDuplicate  } from "../api/api"; 
+
 import NavbarLink from "./Navbar/NavbarLink";
 import lottie from 'lottie-web';
 import Footer from "./Footer/Footer";
@@ -68,10 +70,31 @@ const OpdForm = () => {
     }
   };
 
+  const checkIfDuplicateExists = async () => {
+    try {
+      const duplicateCheck = await checkDuplicate(formData.fullName);
+      return duplicateCheck.exists;
+    } catch (error) {
+      console.error("Error checking duplicates:", error);
+      return false;
+    }
+  };
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const confirmBooking = window.confirm("Do you want to book an appointment?");
     if (!confirmBooking) return;
+
+
+  
+    // Check for duplicate before proceeding
+    const isDuplicate = await checkIfDuplicateExists();
+    if (isDuplicate) {
+      alert("This Full Name and Contact Number already exist. Please use different values.");
+      return;
+    }
+  
 
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -113,9 +136,11 @@ const OpdForm = () => {
   });
 
   return (
-    <div className="w-full">
+
+    <div className="w-full bg-blue-200">
       <NavbarLink />
-      <div className="appointment bg-gradient-to-r from-[#EBF3FF] to-[#f0f5fd] rounded-[30px] p-[100px_60px_0px_60px] mx-[30px] relative overflow-hidden mt-36">
+      <div className="appointment bg-blue-200 rounded-[30px] p-[100px_60px_0px_60px] mx-[30px] relative overflow-hidden mt-36">
+
         <div className="container mx-auto">
           <div className="flex flex-wrap bg-white my-[30px]">
             <div className="max-w-4xl mx-auto p-8 border-1 rounded-2xl mt-8">

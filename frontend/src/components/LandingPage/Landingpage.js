@@ -5,6 +5,7 @@ import Footer from '../Footer/Footer';
 import HospitalSidebar from '../../_components/HospitalSidebar';
 import App from '../../App';
 import Appointment from '../Appointment/Appointment';
+import Anim from '../AnimVideo/Anim';
 
 
 
@@ -13,10 +14,9 @@ function Landingpage() {
   return (
     <div className="flex flex-col min-h-screen w-full p-0 m-0 relative">
 
-       <NavbarLink/>
-       {/* <HospitalSidebar/> */}
+      
       <Hero /> 
-      <Appointment/>
+      {/* <Anim/> */}
        <Footer/> 
         
     </div>
