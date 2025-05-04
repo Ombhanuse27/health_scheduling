@@ -7,6 +7,8 @@ const nodemailer = require("nodemailer");
 const hospitalRoutes = require("./Routes/hospitalRoutes");
 const adminRoutes = require("./Routes/adminRoutes");
 const opdRoutes = require("./Routes/opdRoutes");
+const doctorRoutes = require("./Routes/doctorRoutes");
+const doctorModel = require("./model/Doctor");
 
 const opdModel = require("./model/opdModel");
 const Counter = require("./model/counterModel");
@@ -151,7 +153,7 @@ app.use("/api/", hospitalRoutes);
 app.use("/api/getHospitalsData", hospitalRoutes);
 app.use("/api/getHospitals", adminRoutes);
 app.use("/api/checkDuplicate", opdRoutes);
-
+app.use("/api/doctors", doctorRoutes);
 app.get("/", (req, res) => res.send("Hospital Queuing System Running"));
 
 const PORT = process.env.PORT || 5000;

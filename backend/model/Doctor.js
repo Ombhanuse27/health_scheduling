@@ -1,10 +1,16 @@
 const mongoose = require("mongoose");
 const doctorSchema = new mongoose.Schema({
- hospital_name:{type:String,required:true}, 
-  name: { type: String, required: true },
-  specialization: { type: String, required: true },
-  contact_info: { type: String, required: true },
-  availability: { type: String, required: true },
-  hospitalId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hospital', required: true }, // Reference to Hospital
+  fullName: String,
+  gender: String,
+  dob: String,
+  email: String,
+  phone: String,
+  address: String,
+  specialization: String,
+  hospital: String,
+  username: String,
+  password: String,
 });
-module.exports = mongoose.model('Doctor', doctorSchema);
+
+const Doctor = mongoose.model("Doctor", doctorSchema);
+module.exports = Doctor;

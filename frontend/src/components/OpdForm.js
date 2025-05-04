@@ -91,7 +91,7 @@ const OpdForm = () => {
     // Check for duplicate before proceeding
     const isDuplicate = await checkIfDuplicateExists();
     if (isDuplicate) {
-      alert("This Full Name and Contact Number already exist. Please use different values.");
+      alert("This Full Name already exist. Please use different name.");
       return;
     }
   
@@ -105,6 +105,27 @@ const OpdForm = () => {
       alert("Appointments are closed for today.");
       return;
     }
+
+    const slot = formData.preferredSlot;
+    if (slot) {
+      const slotEndTime = slot.split(" - ")[1]; // e.g., "12:00 PM"
+      const [endHour, endMinutePart] = slotEndTime.split(":");
+      const [minuteStr, period] = endMinutePart.split(" ");
+      let hour = parseInt(endHour);
+      let minute = parseInt(minuteStr);
+
+      if (period === "PM" && hour !== 12) hour += 12;
+      if (period === "AM" && hour === 12) hour = 0;
+
+      const slotEndMinutes = hour * 60 + minute;
+
+      if (currentMinutes > slotEndMinutes) {
+        alert("The selected time slot has already passed. Please choose a valid slot.");
+        return;
+      }
+    }
+
+
 
     try {
       await submitOpdForm(formData.hospitalId, formData);
@@ -124,6 +145,7 @@ const OpdForm = () => {
       alert("Error submitting OPD Form");
     }
   };
+
 
   // Generate time slots from 9 AM to 10 PM (3-hour slots)
   const timeSlots = Array.from({ length: 5 }, (_, i) => {

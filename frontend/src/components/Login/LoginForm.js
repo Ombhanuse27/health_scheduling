@@ -52,7 +52,6 @@ function LoginForm() {
                         </button>
                         </form>
                         
-                       
                         <span>Dont Have Any Account?</span>
                         <div className="register-link2">
                             <Link to="/register">register</Link>

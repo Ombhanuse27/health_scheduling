@@ -14,6 +14,22 @@ export const submitOpdForm = async (hospitalId, data) => {
   }
 };
 
+export const registerDoctor = async (doctor, data) => {
+  try {
+
+    const doctorData = { ...doctor, ...data };
+    const response = await axios.post(`${BASE_URL}/doctors`, doctorData);
+    return response.data; // Axios already parses JSON
+  } catch (error) {
+    console.error("Error registering doctor:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+
+
+
+
 export const getHospitalsData = async (hospitalId) => {
   try {
     const response = await axios.get(`${BASE_URL}/getHospitalsData`);
