@@ -33,6 +33,11 @@ function MegaDoctors() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!doctor.email || !doctor.phone) {
+      alert("Email and phone are required.");
+      return;
+    }
+
     const emailPrefix = doctor.email.slice(0, 4);
     const phoneSuffix = doctor.phone.slice(-3);
     const password = `${emailPrefix}@${phoneSuffix}`;
@@ -42,14 +47,17 @@ function MegaDoctors() {
       password,
     };
 
+    console.log("Sending data to backend: ", data);
     try {
-      await registerDoctor(doctor,data);
+      await registerDoctor(data);
       alert("Doctor registered successfully!");
       setShowModal(false);
     } catch (error) {
       alert("Error registering doctor");
     }
   };
+
+
 
 
 

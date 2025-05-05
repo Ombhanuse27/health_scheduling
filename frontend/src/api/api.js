@@ -14,10 +14,12 @@ export const submitOpdForm = async (hospitalId, data) => {
   }
 };
 
-export const registerDoctor = async (doctor, data) => {
+export const registerDoctor = async (data) => {
   try {
-
-    const doctorData = { ...doctor, ...data };
+    const doctorData = {
+      ...data,
+      password: data.password, // Assuming you want to keep the password in the request
+    };
     const response = await axios.post(`${BASE_URL}/doctors`, doctorData);
     return response.data; // Axios already parses JSON
   } catch (error) {
