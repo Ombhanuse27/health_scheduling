@@ -4,6 +4,8 @@ const BASE_URL = "http://localhost:5000/api"; // Change if needed
 
 export const registerAdmin = (data) => axios.post(`${BASE_URL}/admin/register`, data);
 export const loginAdmin = (data) => axios.post(`${BASE_URL}/admin/login`, data);
+
+export const loginDoctor = (data) => axios.post(`${BASE_URL}/doctors/login`, data);
 export const submitOpdForm = async (hospitalId, data) => {
   try {
     const response = await axios.post(`${BASE_URL}/opd/${hospitalId}`, data);
