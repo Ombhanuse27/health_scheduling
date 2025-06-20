@@ -86,7 +86,7 @@ export const submitDocForm = async (data) => {
 
 export const getHospitals = async () => {
   try {
-    const response = await axios.get(`${BASE_URL}/admin/getHospitals`);
+    const response = await axios.get(`${BASE_URL}/getHospitals`);
     return response.data; // Axios already parses JSON
   } catch (error) {
     console.error("Error fetching hospitals:", error.response?.data || error.message);
