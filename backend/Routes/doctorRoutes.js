@@ -68,6 +68,20 @@ router.post('/', async (req, res) => {
 
 
 // Get all doctors
+// In your backend API (Node.js/Express example)
+router.get('/getDoctors', async (req, res) => {
+    try {
+      const doctorsData = await Doctor.find(); // Replace with your model and query logic
+      res.json(doctorsData);
+    } catch (error) {
+      res.status(500).json({ message: 'Error fetching doctors' });
+    }
+  });
+  
+
+
+
+
 router.post('/login', async (req, res) => {
     const { username, password } = req.body;
 

@@ -154,6 +154,9 @@ app.use("/api/getHospitalsData", hospitalRoutes);
 app.use("/api/getHospitals", adminRoutes);
 app.use("/api/checkDuplicate", opdRoutes);
 app.use("/api/doctors", doctorRoutes);
+app.use("/api/", doctorRoutes);
+
+
 app.get("/", (req, res) => res.send("Hospital Queuing System Running"));
 
 const PORT = process.env.PORT || 5000;

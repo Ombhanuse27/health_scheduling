@@ -129,7 +129,7 @@ const OpdForm = () => {
 
     try {
       await submitOpdForm(formData.hospitalId, formData);
-      const response = await fetch("http://localhost:5000/submitOpdForm", {
+      const response = await fetch("https://health-scheduling.onrender.com/submitOpdForm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
