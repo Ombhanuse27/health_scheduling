@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "https://health-scheduling.onrender.com/api"; // Change if needed
+const BASE_URL = "https://health-scheduling.vercel.app/api"; // Change if needed
 
 export const registerAdmin = (data) => axios.post(`${BASE_URL}/admin/register`, data);
 export const loginAdmin = (data) => axios.post(`${BASE_URL}/admin/login`, data);

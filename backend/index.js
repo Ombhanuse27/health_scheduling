@@ -26,10 +26,11 @@ mongoose
 
 app.use("/api/admin", adminRoutes);
 
-app.use("/api/getHospitalsData", hospitalRoutes);
+app.use("/api/", hospitalRoutes);
 
 app.use("/api/checkDuplicate", opdRoutes);
 app.use("/api/doctors", doctorRoutes);
+app.use("/api/",doctorRoutes);
 
 
 
