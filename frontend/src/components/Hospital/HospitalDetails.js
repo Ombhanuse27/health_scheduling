@@ -11,7 +11,7 @@ import {
   faStar,
   faStarHalfAlt,
 } from "@fortawesome/free-solid-svg-icons";
-import MegaDoctors from "../Doctor/MegaDoctors";
+import OurDoctors from "../Doctor/ourDoctors";
 import { getHospitalsData } from "../../api/api.js";
 import doctorone from "../../images/doctor-6.jpg";
 
@@ -82,7 +82,7 @@ const HospitalDetails = () => {
           <FontAwesomeIcon icon={faStarHalfAlt} style={{ color: "#F1C40F" }} /> {hospital.rating}
         </p>
       </div>
-      <MegaDoctors />
+      <OurDoctors />
     </div>
   );
 };

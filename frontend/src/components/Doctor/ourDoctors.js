@@ -7,56 +7,14 @@ import doctorfour from '../../images/doctor-4.jpg';
 import doctorfive from '../../images/doctor-2.jpg';
 import doctorsix from '../../images/doctor-5.jpg';
 import { getOpdRecords } from "../../api/api";
-import { registerDoctor } from "../../api/api"; // Import the registerDoctor function
 
-function MegaDoctors() {
-  const [opdRecords, setOpdRecords] = useState([]);
+
+function OurDoctors() {
   const [loading, setLoading] = useState(true);
   const token = localStorage.getItem("token");
-  const [showModal, setShowModal] = useState(false);
-
-  const [doctor, setDoctor] = useState({
-    fullName: "",
-    gender: "",
-    dob: "",
-    email: "",
-    phone: "",
-    address: "",
-    specialization: "",
-    hospital: "",
-  });
-
-  const handleChange = (e) => {
-    setDoctor({ ...doctor, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!doctor.email || !doctor.phone) {
-      alert("Email and phone are required.");
-      return;
-    }
-
-    const emailPrefix = doctor.email.slice(0, 4);
-    const phoneSuffix = doctor.phone.slice(-3);
-    const password = `${emailPrefix}@${phoneSuffix}`;
-    const data = {
-      ...doctor,
-      username: doctor.email,
-      password,
-    };
-
-    console.log("Sending data to backend: ", data);
-    try {
-      await registerDoctor(data);
-      alert("Doctor registered successfully!");
-      setShowModal(false);
-    } catch (error) {
-      alert("Error registering doctor");
-    }
-  };
-
+const [opdRecords, setOpdRecords] = useState([]);
+  
+ 
   useEffect(() => {
     const fetchRecords = async () => {
       try {
@@ -96,44 +54,9 @@ function MegaDoctors() {
               Our  Doctors
             </h2>
 
-              <button
-        onClick={() => setShowModal(true)}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-      >
-        Add Doctor
-      </button> 
+            
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-xl w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Doctor Registration</h2>
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <input name="fullName" value={doctor.fullName} onChange={handleChange} placeholder="Full Name" required className="w-full p-2 border rounded text-black" />
-              <select name="gender" value={doctor.gender} onChange={handleChange} required className="w-full p-2 border rounded text-gray-700">
-                <option value="">Select Gender</option>
-                <option>Male</option>
-                <option>Female</option>
-                <option>Other</option>
-              </select>
-              <input name="dob" type="date" value={doctor.dob} onChange={handleChange} required className="w-full p-2 border rounded text-gray-700" />
-              <input name="email" type="email" value={doctor.email} onChange={handleChange} placeholder="Email" required className="w-full p-2 border rounded text-black" />
-              <input name="phone" value={doctor.phone} onChange={handleChange} placeholder="Phone Number" required className="w-full p-2 border rounded text-black" />
-              <input name="address" value={doctor.address} onChange={handleChange} placeholder="Address" required className="w-full p-2 border rounded text-black" />
-              <input name="specialization" value={doctor.specialization} onChange={handleChange} placeholder="Specialization" required className="w-full p-2 border rounded text-black" />
-              <input name="hospital" value={doctor.hospital} onChange={handleChange} placeholder="Associated Hospital" required className="w-full p-2 border rounded text-black" />
-
-              <div className="flex justify-between mt-4">
-                <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-                  Register
-                </button>
-                <button type="button" onClick={() => setShowModal(false)} className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+   
 
             <input
               className="h-12 w-80 rounded-lg bg-white text-gray-700 px-4 ml-auto border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow shadow-md hover:shadow-lg"
@@ -388,4 +311,4 @@ function MegaDoctors() {
   );
 }
 
-export default MegaDoctors;
+export default OurDoctors;
