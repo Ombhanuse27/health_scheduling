@@ -6,13 +6,7 @@ import { faMapMarkerAlt, faPhoneAlt, faHospital, faHeart, faClock ,faStar, faSta
 
 
 const HospitalCard = ({ hospital_img, hospital_name, hospital_location, hospital_phone_number, hospital_speciality,id }) => {
-  console.log("HospitalCard ca:", {
-    hospital_img,
-    hospital_name,
-    hospital_location,
-    hospital_phone_number,
-    hospital_speciality
-  });
+ 
   return (
     
   

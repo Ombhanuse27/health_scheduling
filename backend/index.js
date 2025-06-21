@@ -147,11 +147,9 @@ app.post("/submitOpdForm", async (req, res) => {
 
 
 app.use("/api/admin", adminRoutes);
-app.use("/api/auth/dashboard", opdRoutes);
-app.use("/api/", opdRoutes);
-app.use("/api/", hospitalRoutes);
+
 app.use("/api/getHospitalsData", hospitalRoutes);
-app.use("/api/getHospitals", adminRoutes);
+
 app.use("/api/checkDuplicate", opdRoutes);
 app.use("/api/doctors", doctorRoutes);
 
