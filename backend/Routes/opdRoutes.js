@@ -1,6 +1,8 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const OPD = require("../model/opdModel");
+const opdModel = require("../model/opdModel");
+const Counter = require("../model/counterModel");
+
 const Admin = require("../model/adminModel");
 const authMiddleware = require("../middleware/authMiddleware");
 require("dotenv").config();
@@ -56,10 +58,35 @@ const formatTime = (minutes) => {
   return `${hours}:${mins} ${period}`;
 };
 
-router.post("/submitOpdForm", async (req, res) => {
-  try {
-    const { fullName, contactNumber, email, hospitalId, preferredSlot } = req.body;
+router.post("/opd/:hospitalId", async (req, res) => {
+  console.log(req.body);
 
+  try {
+    const { hospitalId } = req.params;
+    const { fullName, contactNumber, email, preferredSlot } = req.body;
+
+    // Validate hospitalId
+    if (!mongoose.Types.ObjectId.isValid(hospitalId)) {
+      return res.status(400).json({ error: "Invalid Hospital ID" });
+    }
+
+    // Convert hospitalId to ObjectId
+    const validHospitalId = new mongoose.Types.ObjectId(hospitalId);
+
+    // Save initial OPD entry
+    const opdData = req.body;
+    opdData.hospitalId = validHospitalId;
+
+    const newOpdEntry = new opdModel(opdData);
+    await newOpdEntry.save();
+
+    await Admin.findByIdAndUpdate(
+      hospitalId,
+      { $push: { opdForms: newOpdEntry._id } },
+      { new: true }
+    );
+
+    // Proceed with appointment booking
     if (!preferredSlot || typeof preferredSlot !== "string") {
       return res.status(400).json({ message: "Invalid preferredSlot format." });
     }
@@ -70,36 +97,31 @@ router.post("/submitOpdForm", async (req, res) => {
     }
 
     const today = new Date();
-    const localDate = today.toLocaleDateString("en-CA"); // Format YYYY-MM-DD
+    const localDate = today.toLocaleDateString("en-CA");
     const { start, end, startStr, endStr } = parseSlotTime(preferredSlot);
 
-    // Fetch all appointments within the selected slot
     const existingAppointments = await opdModel
       .find({
         hospitalId,
         appointmentDate: localDate,
-        preferredSlot: `${startStr} - ${endStr}`, // Ensure filtering by selected slot
+        preferredSlot: `${startStr} - ${endStr}`,
       })
       .sort({ appointmentTime: 1 });
 
-    // Set default appointment time to slot start
     let appointmentTime = start;
-
-    // If there are previous appointments in the slot, schedule the next 20 minutes later
     if (existingAppointments.length > 0) {
       const lastAppointmentTime = toMinutes(existingAppointments[existingAppointments.length - 1].appointmentTime);
       appointmentTime = lastAppointmentTime + 20;
     }
 
-    // Ensure the appointment time does not exceed the slot end time
     if (appointmentTime < start) {
-      appointmentTime = start; // Start from the slot start time if no previous bookings exist
+      appointmentTime = start;
     }
+
     if (appointmentTime >= end) {
       return res.status(400).json({ message: `No available slots in ${preferredSlot}.` });
     }
 
-    // Generate appointment number
     const counter = await Counter.findOneAndUpdate(
       { name: "appointmentNumber" },
       { $inc: { seq: 1 } },
@@ -113,7 +135,6 @@ router.post("/submitOpdForm", async (req, res) => {
 
     await OpdEntry.save();
 
-    // Send confirmation email
     if (email) {
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
@@ -123,40 +144,9 @@ router.post("/submitOpdForm", async (req, res) => {
       });
     }
 
-    res.json({ message: `Appointment booked successfully at ${OpdEntry.appointmentTime}` });
+    res.status(201).json({ message: `Appointment booked successfully at ${OpdEntry.appointmentTime}` });
   } catch (error) {
-    console.error("Error booking appointment:", error);
-    res.status(500).json({ message: "Error booking appointment", error: error.message });
-  }
-});
-
-router.post("/opd/:hospitalId", async (req, res) => {
-  console.log(req.body);
-  
-  try {
-    const { hospitalId } = req.params; // Get the dynamic hospitalId from the URL
-
-    // Check if the hospitalId is valid
-    if (!mongoose.Types.ObjectId.isValid(hospitalId)) {
-      return res.status(400).json({ error: "Invalid Hospital ID" });
-    }
-
-    // Convert the hospitalId to a MongoDB ObjectId
-    const validHospitalId = new mongoose.Types.ObjectId(hospitalId);
-
-    const opdData = req.body;
-    opdData.hospitalId = validHospitalId;
-
-    const newOpdEntry = new OPD(opdData);
-    await newOpdEntry.save();
-
-    await Admin.findByIdAndUpdate(
-      hospitalId,
-      { $push: { opdForms: opdData._id } }, // Push OPD form ID into admin's array
-      { new: true }
-  );
-    res.status(201).json({ message: "OPD Form Submitted Successfully" });
-  } catch (error) {
+    console.error("Error:", error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -165,7 +155,7 @@ router.post("/checkDuplicate", async (req, res) => {
   const { fullName } = req.body;
 
   try {
-    const existingEntry = await OPD.findOne({ fullName });
+    const existingEntry = await opdModel.findOne({ fullName });
     if (existingEntry) {
       return res.status(200).json({ exists: true, message: "User already exists." });
     } else {
@@ -190,7 +180,7 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
     }
 
     // Fetch OPD records linked to this admin's hospital
-    const opdRecords = await OPD.find({ hospitalId: adminId });
+    const opdRecords = await opdModel.find({ hospitalId: adminId });
 
     res.json(opdRecords);
   } catch (error) {

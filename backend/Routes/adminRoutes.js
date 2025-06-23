@@ -2,12 +2,14 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Admin = require("../model/adminModel");
+const Doctor = require("../model/Doctor");
 
 require("dotenv").config();
 const authMiddleware=require("../middleware/authMiddleware");
+const opdModel = require("../model/opdModel");
 const router = express.Router();
 
-// Admin Registration
+// Admin Registration 
 router.post("/register", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -80,8 +82,42 @@ router.get("/getHospitals", async (req, res) => {
 });
 
 
-router.get("/dashboard", authMiddleware, (req, res) => {
-  res.json({ message: "Welcome to the Admin Dashboard" });
+router.post('/assignDoctors', async (req, res) => {
+  const { recordId, doctorId } = req.body;
+
+  if (!recordId || !doctorId) {
+    return res.status(400).json({ message: "recordId and doctorId are required." });
+  }
+
+  try {
+    const doctor = await Doctor.findById(doctorId);
+    if (!doctor) {
+      return res.status(404).json({ message: "Doctor not found." });
+    }
+
+    const appointment = await opdModel.findById(recordId);
+    if (!appointment) {
+      return res.status(404).json({ message: "Appointment record not found." });
+    }
+
+    // Assign doctor to the OPD record
+    appointment.assignedDoctor = doctorId;
+    await appointment.save();
+
+    // Optionally, also store the appointment in the doctor's model
+    if (!doctor.assignedAppointments?.includes(recordId)) {
+      doctor.assignedAppointments = doctor.assignedAppointments || [];
+      doctor.assignedAppointments.push(recordId);
+      await doctor.save();
+    }
+
+    return res.status(200).json({ message: "Doctor successfully assigned to appointment." });
+  } catch (error) {
+    console.error("Error assigning doctor:", error.message);
+    res.status(500).json({ message: "Internal server error." });
+  }
 });
+
+
 
 module.exports = router;

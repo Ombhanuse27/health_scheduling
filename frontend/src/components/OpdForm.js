@@ -128,22 +128,14 @@ const OpdForm = () => {
 
 
     try {
-      await submitOpdForm(formData.hospitalId, formData);
-      const response = await fetch("https://health-scheduling.onrender.com/submitOpdForm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
+  const response = await submitOpdForm(formData.hospitalId, formData);
 
-      const data = await response.json();
-      if (response.ok) {
-        alert(data.message || "OPD Form submitted successfully");
-      } else {
-        alert(data.message || "Error submitting OPD Form");
-      }
-    } catch (error) {
-      alert("Error submitting OPD Form");
-    }
+  alert(response.message || "OPD Form submitted successfully");
+} catch (error) {
+  alert(error?.response?.data?.message || "Error submitting OPD Form");
+  console.error("Submit error:", error);
+}
+
   };
 
 

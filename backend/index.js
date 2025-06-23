@@ -25,10 +25,11 @@ mongoose
   .catch((err) => console.log(err));
 
 app.use("/api/admin", adminRoutes);
+app.use("/api/",adminRoutes);
 
 app.use("/api/", hospitalRoutes);
+app.use("/api/",opdRoutes);
 
-app.use("/api/checkDuplicate", opdRoutes);
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/",doctorRoutes);
 

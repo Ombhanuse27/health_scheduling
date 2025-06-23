@@ -1,34 +1,58 @@
 import React, { useState, useEffect } from "react";
 import { getOpdRecords, getDoctorsData } from "../../api/api"; // Add API path for doctors data
 
+import { assignDoctors } from "../../api/api"; // Add API path for assigning doctors
+
 const AdminDashboard = ({ children }) => {
   const [opdRecords, setOpdRecords] = useState([]);
-  const [doctorsData, setDoctorsData] = useState([]); // New state for doctors data
   const [loading, setLoading] = useState(true);
+  const [doctors, setDoctors] = useState([]);
+
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const token = localStorage.getItem("token");
 
+
+  const assignDoctorsHandler = async (record) => {
+  if (!record.assignedDoctorId) {
+    alert("Please select a doctor before sending.");
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `Are you sure you want to assign ${record.fullName}'s appointment to the selected doctor?`
+  );
+  if (!confirmed) return;
+
+  try {
+    await assignDoctors(record._id, record.assignedDoctorId, token);
+    alert("Appointment successfully assigned to the doctor!");
+  } catch (error) {
+    alert("Failed to assign appointment.");
+  }
+};
+
   useEffect(() => {
-    const fetchRecordsAndDoctors = async () => {
-      setLoading(true);
+  const fetchRecords = async () => {
+    setLoading(true);
+    try {
+      const { data: opdData } = await getOpdRecords(token);
+      console.log("Fetched OPD Data:", opdData); // Debugging
+      setOpdRecords(Array.isArray(opdData) ? opdData : []);
+      const doctorsData  = await getDoctorsData(token);
+      console.log("Doctors fetched: ", doctorsData);
+     
+      setDoctors(doctorsData );
+    } catch (error) {
+      alert("Error fetching data");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      try {
-        // Fetch OPD records
-        const { data: opdData } = await getOpdRecords(token);
-        setOpdRecords(opdData);
+  fetchRecords();
+}, [token]);
 
-        // Fetch Doctors data
-        const { data: doctorsData } = await getDoctorsData(token); // Assuming the API call is implemented
-        setDoctorsData(doctorsData);
-      } catch (error) {
-        alert("Error fetching data");
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchRecordsAndDoctors();
-  }, [token]);
 
   const uniqueDates = [...new Set(opdRecords.map((record) => record.appointmentDate))];
 
@@ -88,19 +112,7 @@ const AdminDashboard = ({ children }) => {
               </select>
             </div>
 
-            <h3 className="text-3xl font-semibold mt-6">Doctors List</h3>
-            <ul>
-              {doctorsData.length > 0 ? (
-                doctorsData.map((doctor, index) => (
-                  <li key={index} className="mb-2">
-                    <p>{doctor.name}</p>
-                    <p>{doctor.specialization}</p>
-                  </li>
-                ))
-              ) : (
-                <p>No doctors found.</p>
-              )}
-            </ul>
+          
 
             <table className="w-full border-collapse bg-white rounded-lg overflow-hidden shadow-lg mt-6">
               <thead>
@@ -111,6 +123,8 @@ const AdminDashboard = ({ children }) => {
                   <th className="p-4 text-left">Appointment Number</th>
                   <th className="p-4 text-left">Appointment Date</th>
                   <th className="p-4 text-left">Appointment Time</th>
+                  <th className="p-4 text-left">Assign Doctor</th>
+
                 </tr>
               </thead>
               <tbody>
@@ -123,6 +137,41 @@ const AdminDashboard = ({ children }) => {
                       <td className="border p-2">{record.appointmentNumber}</td>
                       <td className="border p-2">{record.appointmentDate}</td>
                       <td className="border p-2">{record.appointmentTime}</td>
+
+                      <td className="border p-2">
+  <select
+    className="px-2 py-1 rounded border text-black"
+    value={record.assignedDoctorId || ""}
+    onChange={(e) => {
+      const selectedDoctorId = e.target.value;
+      // Update assignedDoctorId in state for this record
+      setOpdRecords((prev) =>
+        prev.map((r) =>
+          r._id === record._id ? { ...r, assignedDoctorId: selectedDoctorId } : r
+        )
+      );
+    }}
+  >
+    <option value="" disabled>
+      Select Doctor
+    </option>
+    {doctors.map((doc) => (
+      <option key={doc._id} value={doc._id}>
+        {doc.fullName}
+      </option>
+    ))}
+  </select>
+
+  <button
+  className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
+  onClick={() => assignDoctorsHandler(record)}
+  disabled={!record.assignedDoctorId}
+>
+  Send
+</button>
+
+</td>
+
                     </tr>
                   ))
                 ) : (

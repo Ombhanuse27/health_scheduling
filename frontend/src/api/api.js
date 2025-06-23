@@ -1,8 +1,8 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:5000/api"; // Use your local development URL
+// const BASE_URL = "http://localhost:5000/api";Use your local development URL
 
-// const BASE_URL = "https://health-scheduling.onrender.com/api";
+const BASE_URL = "https://health-scheduling.onrender.com/api";
 
 export const registerAdmin = (data) => axios.post(`${BASE_URL}/admin/register`, data);
 export const loginAdmin = (data) => axios.post(`${BASE_URL}/admin/login`, data);
@@ -86,6 +86,23 @@ export const submitDocForm = async (data) => {
   }
 };
 
+export const assignDoctors = async (recordId, doctorId, token) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/assignDoctors`,
+      { recordId, doctorId },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    return response.data; // Axios already parses JSON
+  } catch (error) {
+    console.error("Error assigning doctor:", error.response?.data || error.message);
+    throw error;
+  }
+}
+
+
 export const getHospitals = async () => {
   try {
     const response = await axios.get(`${BASE_URL}/admin/getHospitals`);
@@ -112,5 +129,3 @@ export const getOpdRecords = (token) =>
   axios.get(`${BASE_URL}/dashboard`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-export const getdoclist = (token) =>
-  axios.get(`${BASE_URL}/`, { headers: { Authorization: token } });

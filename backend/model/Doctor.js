@@ -11,6 +11,12 @@ const doctorSchema = new mongoose.Schema({
   hospital: { type: String, required: true },
   username: { type: String}, // Ensure no duplicate usernames
   password: { type: String},
+  assignedAppointments: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'OpdRecord',
+    },
+  ],
 });
 
 const Doctor = mongoose.model("Doctor", doctorSchema);
