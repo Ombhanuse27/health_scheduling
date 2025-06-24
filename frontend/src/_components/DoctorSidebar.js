@@ -15,6 +15,8 @@ import { motion } from "motion/react";
 import { cn } from "../lib/utils";
 import MegaDoctors from "../components/Doctor/MegaDoctors";
 import HospitalInfo from "../components/HospitalAdmin/HospitalInfo";
+import ourDoctors from "../components/Doctor/ourDoctors";
+import DoctorDashboard from "../components/Doctor/DoctorDashboard";
 
 
 export function HospitalSidebar() {
@@ -152,21 +154,21 @@ const Skeleton = ({ selectedLink }) => {
   const renderContent = () => {
     switch (selectedLink) {
       case "/hospitalsidebar/dashboard":
-        return <Dashboard />; 
+        return <DoctorDashboard />; 
       case "/hospitalsidebar/doctor":
         return (
-          <MegaDoctors />
+          <ourDoctors/>
         );
       case "/hospitalsidebar/info":
         return (
          <HospitalInfo  />
         );
         case "/logout":
-          window.location.href = "http://localhost:3000/"; // ✅ Correct usage
+          window.location.href = "https://health-scheduling.vercel.app/"; // ✅ Correct usage
           break;
         
       default:
-        return <Dashboard />; 
+        return <DoctorDashboard />; 
     }
   };
 

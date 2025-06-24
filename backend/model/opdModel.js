@@ -15,6 +15,11 @@ const opdSchema = new mongoose.Schema({
     ref: 'Doctor',
     default: null
   },
+  prescriptionPdf: {
+  data: String, // base64 string
+  contentType: String, // e.g., "application/pdf"
+},
+
   hospitalName:String, // Reference to Hospital
   appointmentNumber: { type: Number, unique: true },// Auto-generated number
   appointmentDate: String, // Auto-generated date

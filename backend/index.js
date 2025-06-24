@@ -30,8 +30,9 @@ app.use("/api/",adminRoutes);
 app.use("/api/", hospitalRoutes);
 app.use("/api/",opdRoutes);
 
-app.use("/api/doctors", doctorRoutes);
 app.use("/api/",doctorRoutes);
+app.use("/api/doctors", doctorRoutes);
+
 
 
 

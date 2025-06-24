@@ -39,6 +39,8 @@ function LoginForm() {
                     password: formData.password
                 });
                 localStorage.setItem("token", response.data.token);
+                localStorage.setItem("username", response.data.doctor?.username || formData.username); // Store email for doctor
+
                 alert("Doctor login successful!");
                 navigate("/doctorsidebar");
             }

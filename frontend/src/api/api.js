@@ -1,8 +1,10 @@
 import axios from "axios";
 
-// const BASE_URL = "http://localhost:5000/api";Use your local development URL
-
 const BASE_URL = "https://health-scheduling.onrender.com/api";
+
+
+
+
 
 export const registerAdmin = (data) => axios.post(`${BASE_URL}/admin/register`, data);
 export const loginAdmin = (data) => axios.post(`${BASE_URL}/admin/login`, data);
@@ -31,10 +33,6 @@ export const registerDoctor = async (data) => {
     throw error;
   }
 };
-
-
-
-
 
 
 export const getHospitalsData = async (hospitalId) => {
@@ -122,6 +120,37 @@ export const getDoctorsData = async (token) => {
   });
   return await response.json();
 };
+
+
+export const getRecords = (token) =>
+  axios.get(`${BASE_URL}/doctor/opd`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  export const savePrescriptionPdf = (token, appointmentId, pdfBase64) => {
+  return axios.post(
+    `${BASE_URL}/prescriptions`,
+    {
+      appointmentId,
+      pdfBase64,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+};
+
+
+export const getPrescriptions = (token) => {
+  return axios.get(`${BASE_URL}/getPrescriptions`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
 
 
 

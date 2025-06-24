@@ -188,4 +188,19 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
   }
 });
 
+router.get("/doctor/opd", authMiddleware, async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+
+    // Fetch OPD records assigned to this doctor
+    const opdRecords = await opdModel.find({ "assignedDoctor": doctorId });
+
+    res.json(opdRecords);
+  } catch (error) {
+    console.error("Error in /doctor/opd:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 module.exports = router;
