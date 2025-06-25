@@ -22,7 +22,7 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-router.post('/', async (req, res) => {
+router.post('/doctors', async (req, res) => {
     const doctorData = req.body;
     const plainPassword = doctorData.password;
 
@@ -31,7 +31,7 @@ router.post('/', async (req, res) => {
         if (!doctorData.username || !doctorData.email || !plainPassword) {
             return res.status(400).json({ error: "Username, email, and password are required." });
         }
-
+        
         // Check if doctor with this email already exists
         const existingDoctor = await Doctor.findOne({ username: doctorData.email });
         if (existingDoctor) {
@@ -133,7 +133,7 @@ router.get("/getPrescriptions", authMiddleware, async (req, res) => {
 
 
 
-router.post('/login', async (req, res) => {
+router.post('/doctors/login', async (req, res) => {
     const { username, password } = req.body;
 
     try {

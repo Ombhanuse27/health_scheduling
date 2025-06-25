@@ -1,9 +1,8 @@
 import axios from "axios";
 
-const BASE_URL = "https://health-scheduling.onrender.com/api";
+// const BASE_URL = "https://health-scheduling.onrender.com/api";
 
-
-
+const BASE_URL = "http://localhost:5000/api"; // Change this to your actual backend URL
 
 
 export const registerAdmin = (data) => axios.post(`${BASE_URL}/admin/register`, data);

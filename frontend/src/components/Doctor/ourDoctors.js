@@ -61,9 +61,6 @@ const [doctors, setDoctors] = useState([]);
             </h2>
 
             
-
-   
-
             <input
               className="h-12 w-80 rounded-lg bg-white text-gray-700 px-4 ml-auto border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow shadow-md hover:shadow-lg"
               placeholder="Search doctors..."
