@@ -31,8 +31,7 @@ router.post('/doctors', async (req, res) => {
         if (!doctorData.username || !doctorData.email || !plainPassword) {
             return res.status(400).json({ error: "Username, email, and password are required." });
         }
-        
-        // Check if doctor with this email already exists
+      
         const existingDoctor = await Doctor.findOne({ username: doctorData.email });
         if (existingDoctor) {
             return res.status(400).json({ error: "Doctor with this email already exists." });
