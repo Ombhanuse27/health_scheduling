@@ -8,6 +8,7 @@ const hospitalRoutes = require("./Routes/hospitalRoutes");
 const adminRoutes = require("./Routes/adminRoutes");
 const opdRoutes = require("./Routes/opdRoutes");
 const doctorRoutes = require("./Routes/doctorRoutes");
+const emailRoutes = require("./Routes/emailRoutes");
 const doctorModel = require("./model/Doctor");
 
 const opdModel = require("./model/opdModel");
@@ -29,6 +30,8 @@ app.use("/api/",adminRoutes);
 
 app.use("/api/", hospitalRoutes);
 app.use("/api/",opdRoutes);
+
+app.use("/api/", emailRoutes);
 
 app.use("/api/",doctorRoutes);
 

@@ -1,7 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "https://health-scheduling.onrender.com/api";
-
+ const BASE_URL = "https://health-scheduling.onrender.com/api";
 // const BASE_URL = "http://localhost:5000/api"; 
 
 
@@ -58,8 +57,6 @@ export const checkDuplicate = async (fullName) => {
 };
 
 
-
-
 export const submitHospitalInfo = async (hospitalId, data) => {
   try {
     const response = await axios.post(`${BASE_URL}/hospitalData/${hospitalId}`, data);
@@ -69,8 +66,6 @@ export const submitHospitalInfo = async (hospitalId, data) => {
     throw error;
   }
 }
-
-
 
 // export const submitDocForm = (data) => axios.post(`${BASE_URL}/dashboard/add`, data);
 export const submitDocForm = async (data) => {
@@ -150,6 +145,14 @@ export const getPrescriptions = (token) => {
   });
 };
 
+
+export const sendPrescriptionEmail = async ({ email, patientName, pdfBase64 }) => {
+  return await axios.post(`${BASE_URL}/send-prescription`, {
+    email,
+    patientName,
+    pdfBase64,
+  });
+};
 
 
 
