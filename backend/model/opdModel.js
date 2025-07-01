@@ -20,6 +20,11 @@ const opdSchema = new mongoose.Schema({
   contentType: String, // e.g., "application/pdf"
 },
 
+
+  diagnosis: String,
+  medication: String,
+  advice: String,
+
   hospitalName:String, // Reference to Hospital
   appointmentNumber: { type: Number, unique: true },// Auto-generated number
   appointmentDate: String, // Auto-generated date

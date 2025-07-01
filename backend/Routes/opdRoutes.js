@@ -202,5 +202,29 @@ router.get("/doctor/opd", authMiddleware, async (req, res) => {
   }
 });
 
+router.put("/opd/:id/prescription", async (req, res) => {
+  const { pdfBase64, diagnosis, medication, advice } = req.body;
+  try {
+    const updated = await opdModel.findByIdAndUpdate(
+      req.params.id,
+      {
+        prescriptionPdf: {
+          data: pdfBase64,
+          contentType: "application/pdf",
+        },
+        diagnosis,
+        medication,
+        advice,
+      },
+      { new: true }
+    );
+    res.json({ message: "Prescription saved", data: updated });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to save prescription" });
+  }
+});
+
+
 
 module.exports = router;

@@ -82,35 +82,35 @@ router.get('/getDoctors', async (req, res) => {
   
 
 
-router.post("/prescriptions", authMiddleware, async (req, res) => {
-  try {
-    const { appointmentId, pdfBase64 } = req.body;
+// router.post("/prescriptions", authMiddleware, async (req, res) => {
+//   try {
+//     const { appointmentId, pdfBase64 } = req.body;
 
-    if (!appointmentId || !pdfBase64) {
-      return res.status(400).json({ error: "Missing appointmentId or pdfBase64" });
-    }
+//     if (!appointmentId || !pdfBase64) {
+//       return res.status(400).json({ error: "Missing appointmentId or pdfBase64" });
+//     }
 
-    const updated = await opdModel.findByIdAndUpdate(
-      appointmentId,
-      {
-        prescriptionPdf: {
-          data: pdfBase64,
-          contentType: "application/pdf",
-        },
-      },
-      { new: true }
-    );
+//     const updated = await opdModel.findByIdAndUpdate(
+//       appointmentId,
+//       { 
+//         prescriptionPdf: {
+//           data: pdfBase64,
+//           contentType: "application/pdf",
+//         },
+//       },
+//       { new: true }
+//     );
 
-    if (!updated) {
-      return res.status(404).json({ error: "Appointment not found" });
-    }
+//     if (!updated) {
+//       return res.status(404).json({ error: "Appointment not found" });
+//     }
 
-    res.json({ message: "Prescription saved successfully." });
-  } catch (error) {
-    console.error("Error saving prescription:", error);
-    res.status(500).json({ error: error.message });
-  }
-});
+//     res.json({ message: "Prescription saved successfully." });
+//   } catch (error) {
+//     console.error("Error saving prescription:", error);
+//     res.status(500).json({ error: error.message });
+//   }
+// });
 
 
 router.get("/getPrescriptions", authMiddleware, async (req, res) => {

@@ -9,6 +9,12 @@ const authMiddleware=require("../middleware/authMiddleware");
 const opdModel = require("../model/opdModel");
 const router = express.Router();
 
+
+
+router.get("/getcron", (req, res) => {
+  res.status(200).send("Cron ping successful at " + new Date().toISOString());
+});
+
 // Admin Registration 
 router.post("/register", async (req, res) => {
   try {

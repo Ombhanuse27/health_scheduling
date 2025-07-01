@@ -1,7 +1,7 @@
 import axios from "axios";
 
- const BASE_URL = "https://health-scheduling.onrender.com/api";
-// const BASE_URL = "http://localhost:5000/api"; 
+const BASE_URL = "https://health-scheduling.onrender.com/api";
+
 
 
 export const registerAdmin = (data) => axios.post(`${BASE_URL}/admin/register`, data);
@@ -121,12 +121,15 @@ export const getRecords = (token) =>
     headers: { Authorization: `Bearer ${token}` },
   });
 
-  export const savePrescriptionPdf = (token, appointmentId, pdfBase64) => {
-  return axios.post(
-    `${BASE_URL}/prescriptions`,
+  // Save new prescription (if not exists)
+export const savePrescriptionPdf = async (token, recordId, pdfBase64, diagnosis, medication, advice) => {
+  return await axios.put(
+    `${BASE_URL}/opd/${recordId}/prescription`,
     {
-      appointmentId,
       pdfBase64,
+      diagnosis,
+      medication,
+      advice,
     },
     {
       headers: {
@@ -135,6 +138,7 @@ export const getRecords = (token) =>
     }
   );
 };
+
 
 
 export const getPrescriptions = (token) => {
