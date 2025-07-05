@@ -24,7 +24,7 @@ export const registerDoctor = async (data) => {
       ...data,
       password: data.password, // Assuming you want to keep the password in the request
     };
-    const response = await axios.post(`${BASE_URL}/doctors`, doctorData);
+    const response = await axios.post(`${BASE_URL}/doctors/AddDoctors`, doctorData);
     return response.data; // Axios already parses JSON
   } catch (error) {
     console.error("Error registering doctor:", error.response?.data || error.message);
@@ -81,7 +81,7 @@ export const submitDocForm = async (data) => {
 export const assignDoctors = async (recordId, doctorId, token) => {
   try {
     const response = await axios.post(
-      `${BASE_URL}/assignDoctors`,
+      `${BASE_URL}/admin/assignDoctors`,
       { recordId, doctorId },
       {
         headers: { Authorization: `Bearer ${token}` },
@@ -107,7 +107,7 @@ export const getHospitals = async () => {
 
 
 export const getDoctorsData = async (token) => {
-  const response = await fetch(`${BASE_URL}/getDoctors`, {
+  const response = await fetch(`${BASE_URL}/doctors/getDoctors`, {
     headers: {
       'Authorization': `Bearer ${token}`,
     },

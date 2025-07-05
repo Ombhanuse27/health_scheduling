@@ -22,7 +22,7 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-router.post('/doctors', async (req, res) => {
+router.post('/addDoctors', async (req, res) => {
     const doctorData = req.body;
     const plainPassword = doctorData.password;
 
@@ -132,7 +132,7 @@ router.get("/getPrescriptions", authMiddleware, async (req, res) => {
 
 
 
-router.post('/doctors/login', async (req, res) => {
+router.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
     try {
