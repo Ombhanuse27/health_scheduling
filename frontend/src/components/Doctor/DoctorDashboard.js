@@ -89,7 +89,6 @@ const generatePdfBase64 = (doctor) => {
   
   doc.text(`Age: ${selectedRecord.age || "N/A"}`, 10, 55);
   doc.text(`Gender: ${selectedRecord.gender || "N/A"}`, 60, 55);
-  doc.text(`Weight: ________`, 120, 55);
   
   doc.text(`Diagnosis: ${prescription.diagnosis}`, 10, 62);
   

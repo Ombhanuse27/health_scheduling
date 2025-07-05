@@ -1,6 +1,6 @@
 import axios from "axios";
 
-// const BASE_URL = "http://localhost:5000/api"; // Use this for local development
+//const BASE_URL = "http://localhost:5000/api"; // Use this for local development
 const BASE_URL = "https://health-scheduling.onrender.com/api"; // Use this for local development
 
 
