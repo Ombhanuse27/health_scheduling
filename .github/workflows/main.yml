@@ -11,4 +11,4 @@ jobs:
     steps:
       - name: Send ping to backend
         run: |
-          curl -X GET "https://health-scheduling.onrender.com/api/getcron"
+          curl -X GET "https://health-scheduling.onrender.com/api/admin/getcron"
