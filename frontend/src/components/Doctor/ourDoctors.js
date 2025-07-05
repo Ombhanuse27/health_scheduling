@@ -13,6 +13,7 @@ import { getDoctorsData } from "../../api/api";
 function OurDoctors() {
   const [loading, setLoading] = useState(true);
   const token = localStorage.getItem("token");
+  console.log("Token:", token);
 
 
 const [doctors, setDoctors] = useState([]);
@@ -20,7 +21,7 @@ const [doctors, setDoctors] = useState([]);
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const  data = await getDoctorsData(token);
+        const  data = await getDoctorsData();
         console.log("Doctors fetched:", data);
         setDoctors(data);
       } catch (error) {

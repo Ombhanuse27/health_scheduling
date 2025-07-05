@@ -71,7 +71,7 @@ router.post('/addDoctors', async (req, res) => {
 
 // Get all doctors
 // In your backend API (Node.js/Express example)
-router.get('/getDoctors',authMiddleware, async (req, res) => {
+router.get('/getDoctors', async (req, res) => {
     try {
       const doctorsData = await Doctor.find(); // Replace with your model and query logic
       res.json(doctorsData);

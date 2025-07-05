@@ -26,7 +26,7 @@ mongoose
   .catch((err) => console.log(err));
 
 app.use("/api/admin", adminRoutes);
-app.use("/api/doctors",doctorRoutes);
+app.use("/api/doctors/",doctorRoutes);
 app.use("/api/", hospitalRoutes);
 app.use("/api/",opdRoutes);
 app.use("/api/", emailRoutes);

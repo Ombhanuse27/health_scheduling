@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const BASE_URL = "https://health-scheduling.onrender.com/api";
+// const BASE_URL = "http://localhost:5000/api"; // Use this for local development
+const BASE_URL = "https://health-scheduling.onrender.com/api"; // Use this for local development
 
 
 
@@ -106,13 +107,14 @@ export const getHospitals = async () => {
 };
 
 
-export const getDoctorsData = async (token) => {
-  const response = await fetch(`${BASE_URL}/doctors/getDoctors`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  });
-  return await response.json();
+export const getDoctorsData = async () => {
+  try {
+    const response = await axios.get(`${BASE_URL}/doctors/getDoctors`);
+    return response.data; // Axios already parses JSON
+  } catch (error) {
+    console.error("Error fetching doctors data:", error.response?.data || error.message);
+    throw error;
+  }
 };
 
 
@@ -142,7 +144,7 @@ export const savePrescriptionPdf = async (token, recordId, pdfBase64, diagnosis,
 
 
 export const getPrescriptions = (token) => {
-  return axios.get(`${BASE_URL}/getPrescriptions`, {
+  return axios.get(`${BASE_URL}/doctors/getPrescriptions`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
