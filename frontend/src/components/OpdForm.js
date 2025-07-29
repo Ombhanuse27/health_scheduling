@@ -150,18 +150,21 @@ const OpdForm = () => {
   });
 
   return (
+  <div className="w-full bg-gradient-to-b from-blue-100 to-blue-200 min-h-screen">
+    <NavbarLink />
+    <div className="appointment bg-blue-100 rounded-[30px] p-[80px_40px_40px_40px] mx-[20px] relative overflow-hidden mt-36 shadow-lg">
 
-    <div className="w-full bg-blue-200">
-      <NavbarLink />
-      <div className="appointment bg-blue-200 rounded-[30px] p-[100px_60px_0px_60px] mx-[30px] relative overflow-hidden mt-36">
+      <div className="container mx-auto">
+        <div className="flex flex-wrap bg-white rounded-3xl shadow-xl my-[30px] overflow-hidden">
+          <div className="w-full lg:w-6/12 p-8">
+            <div className="max-w-2xl mx-auto">
+              <h2 className="text-3xl font-bold text-center text-blue-700 mb-10">
+                🩺 Appointment Form
+              </h2>
 
-        <div className="container mx-auto">
-          <div className="flex flex-wrap bg-white my-[30px]">
-            <div className="max-w-4xl mx-auto p-8 border-1 rounded-2xl mt-8">
-              <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Appointment Form</h2>
               <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col">
-                  <label htmlFor="hospitalId" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="hospitalId" className="block text-sm font-medium text-gray-700 mb-2">
                     Select Hospital (Admin Username)
                   </label>
                   <select
@@ -169,7 +172,7 @@ const OpdForm = () => {
                     name="hospitalId"
                     value={formData.hospitalId}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
                   >
                     <option value="">Select a hospital</option>
@@ -182,7 +185,7 @@ const OpdForm = () => {
                 </div>
 
                 <div className="flex flex-col">
-                  <label htmlFor="preferredSlot" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="preferredSlot" className="block text-sm font-medium text-gray-700 mb-2">
                     Which slot do you prefer?
                   </label>
                   <select
@@ -190,7 +193,7 @@ const OpdForm = () => {
                     name="preferredSlot"
                     value={formData.preferredSlot}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     required
                   >
                     <option value="">Select a time slot</option>
@@ -205,7 +208,7 @@ const OpdForm = () => {
                 {Object.keys(formData).map((key) =>
                   key !== "hospitalId" && key !== "hospitalName" && key !== "preferredSlot" && (
                     <div key={key} className="flex flex-col">
-                      <label htmlFor={key} className="block text-sm font-medium text-gray-700 mb-1 capitalize">
+                      <label htmlFor={key} className="block text-sm font-medium text-gray-700 mb-2 capitalize">
                         {key.replace(/([A-Z])/g, " $1").trim()}
                       </label>
                       <input
@@ -215,7 +218,8 @@ const OpdForm = () => {
                         value={formData[key]}
                         onChange={handleChange}
                         placeholder={`Enter ${key.replace(/([A-Z])/g, " $1").trim()}`}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+className="border border-solid border-gray-400 border-[2px] w-full px-4 py-3  rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none"
+
                         required
                       />
                     </div>
@@ -224,22 +228,24 @@ const OpdForm = () => {
 
                 <button
                   type="submit"
-                  className="col-span-1 md:col-span-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md"
+                  className="col-span-1 md:col-span-2 bg-blue-600 hover:bg-blue-700 transition duration-200 text-white font-semibold py-3 px-6 rounded-lg shadow-md mt-2"
                 >
                   Submit
                 </button>
               </form>
             </div>
+          </div>
 
-            <div className="w-full lg:w-7/12 md:w-6/12 sm:w-full mb-5 app-image flex items-center justify-center">
-              <div className="img" ref={container}></div>
-            </div>
+          <div className="w-full lg:w-6/12 bg-blue-50 flex items-center justify-center p-8">
+            <div className="img max-w-md w-full" ref={container}></div>
           </div>
         </div>
       </div>
-      <Footer />
     </div>
-  );
+    <Footer />
+  </div>
+);
+
 };
 
 export default OpdForm;

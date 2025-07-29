@@ -6,11 +6,12 @@ import { registerAdmin } from "../../api/api";
 import NavLink  from '../Navbar/NavbarLink';
 import Footer from '../Footer/Footer';
 import './RegisterForm.css';
+import { arSD } from "@mui/material/locale";
 const Register = () => {
 
 
   
-  const [formData, setFormData] = useState({ username: "", password: "" });
+  const [formData, setFormData] = useState({ username: "", password: "" ,address: "" });
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -50,6 +51,13 @@ const Register = () => {
                                 placeholder="Password"
                                 value={formData.password}
                                 onChange={handleChange}
+                                required id="" />
+
+                            <input type="text"
+                                name="address"
+                                placeholder="Address"   
+                                value={formData.address}
+                                onChange={handleChange} 
                                 required id="" />
                                 <button type="submit" className=" rounded submit1">
                            Register

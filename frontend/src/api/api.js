@@ -27,7 +27,7 @@ export const registerDoctor = async (data) => {
     };
     const response = await axios.post(`${BASE_URL}/doctors/addDoctors`, doctorData);
     return response.data; // Axios already parses JSON
-  } catch (error) {
+  } catch (error) { 
     console.error("Error registering doctor:", error.response?.data || error.message);
     throw error;
   }

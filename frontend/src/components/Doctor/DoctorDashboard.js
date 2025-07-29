@@ -391,44 +391,54 @@ const generatePdfBase64 = (doctor) => {
                       <td className="border p-2">{record.appointmentDate}</td>
                       <td className="border p-2">{record.appointmentTime}</td>
                       <td className="border p-2">
-                        {record.prescriptionPdf?.data ? (
-                          <>
-                            <button className="bg-green-500 text-white px-4 py-1 rounded mr-2 cursor-default">
-                              Added
-                            </button>
-                            <button
-                              onClick={() => {
-                                const win = window.open();
-                                win.document.write(
-                                  `<iframe src="data:application/pdf;base64,${record.prescriptionPdf?.data}" width="100%" height="100%"></iframe>`
-                                );
-                              }}
-                              className="bg-purple-500 hover:bg-purple-700 text-white px-4 py-1 rounded"
-                            >
-                              View
-                            </button>
+                      {record.prescriptionPdf?.data ? (
+  <>
+    <button
+      className="bg-green-500 text-white px-4 py-1 rounded mr-2 cursor-default transition transform hover:scale-105"
+      title="Prescription already added"
+    >
+      ✅ Added
+    </button>
 
-                            <button
-                              onClick={() => handleEditPrescription(record)}
-                              className="bg-blue-600 hover:bg-blue-800 text-white px-4 py-1 rounded"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => sendEmail(record._id)}
-                              className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-1 rounded"
-                            >
-                              Send Email
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => handleOpenPrescriptionForm(record)}
-                            className="bg-blue-500 hover:bg-blue-700 text-white px-4 py-1 rounded"
-                          >
-                            Add
-                          </button>
-                        )}
+    <button
+      onClick={() => {
+        const win = window.open();
+        win.document.write(
+          `<iframe src="data:application/pdf;base64,${record.prescriptionPdf?.data}" width="100%" height="100%"></iframe>`
+        );
+      }}
+      className="bg-purple-500 hover:bg-purple-700 text-white px-4 py-1 rounded transition transform hover:scale-105 shadow"
+      title="View PDF"
+    >
+      📄 View
+    </button>
+
+    <button
+      onClick={() => handleEditPrescription(record)}
+      className="bg-blue-600 hover:bg-blue-800 text-white px-4 py-1 rounded transition transform hover:scale-105 shadow"
+      title="Edit Prescription"
+    >
+      ✏️ Edit
+    </button>
+
+    <button
+      onClick={() => sendEmail(record._id)}
+      className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-1 rounded transition transform hover:scale-105 shadow"
+      title="Send Email"
+    >
+      📧 Send
+    </button>
+  </>
+) : (
+  <button
+    onClick={() => handleOpenPrescriptionForm(record)}
+    className="bg-blue-500 hover:bg-blue-700 text-white px-4 py-1 rounded transition transform hover:scale-105 shadow"
+    title="Add Prescription"
+  >
+    ➕ Add
+  </button>
+)}
+
                       </td>
                     </tr>
                   ))
