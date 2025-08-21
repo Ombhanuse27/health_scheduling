@@ -87,6 +87,15 @@ router.get("/getHospitals", async (req, res) => {
   }
 });
 
+router.get("/me", authMiddleware, async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.user.id).select("username");
+    if (!admin) return res.status(404).json({ message: "Admin not found" });
+    res.json(admin);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 router.post('/assignDoctors', async (req, res) => {
   const { recordId, doctorId } = req.body;

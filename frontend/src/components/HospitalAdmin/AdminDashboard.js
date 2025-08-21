@@ -10,7 +10,10 @@ const AdminDashboard = ({ children }) => {
 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const token = localStorage.getItem("token");
+  
 
+  
+console.log("Token:", token); // Debugging
 
   const assignDoctorsHandler = async (record) => {
   if (!record.assignedDoctorId) {

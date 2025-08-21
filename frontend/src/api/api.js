@@ -1,7 +1,7 @@
 import axios from "axios";
 
-//const BASE_URL = "http://localhost:5000/api"; // Use this for local development
-const BASE_URL = "https://health-scheduling.onrender.com/api"; // Use this for local development
+const BASE_URL = "http://localhost:5000/api"; // Use this for local development
+// const BASE_URL = "https://health-scheduling.onrender.com/api"; // Use this for local development
 
 
 
@@ -106,6 +106,12 @@ export const getHospitals = async () => {
   }
 };
 
+export const getLoggedInHospital = (token) => {
+  return axios.get(`${BASE_URL}/admin/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
 
 export const getDoctorsData = async () => {
   try {
@@ -116,6 +122,17 @@ export const getDoctorsData = async () => {
     throw error;
   }
 };
+
+export const deleteDoctor = async (id) => {
+  try {
+    const response = await axios.delete(`${BASE_URL}/doctors/deleteDoctor/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting doctor:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
 
 
 export const getRecords = (token) =>

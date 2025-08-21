@@ -58,6 +58,8 @@ const formatTime = (minutes) => {
   return `${hours}:${mins} ${period}`;
 };
 
+// Helper functions (toMinutes, parseSlotTime, formatTime) and nodemailer transporter remain the same.
+
 router.post("/opd/:hospitalId", async (req, res) => {
   console.log(req.body);
 
@@ -65,89 +67,108 @@ router.post("/opd/:hospitalId", async (req, res) => {
     const { hospitalId } = req.params;
     const { fullName, contactNumber, email, preferredSlot } = req.body;
 
-    // Validate hospitalId
+    // --- Validation ---
     if (!mongoose.Types.ObjectId.isValid(hospitalId)) {
       return res.status(400).json({ error: "Invalid Hospital ID" });
     }
-
-    // Convert hospitalId to ObjectId
-    const validHospitalId = new mongoose.Types.ObjectId(hospitalId);
-
-    // Save initial OPD entry
-    const opdData = req.body;
-    opdData.hospitalId = validHospitalId;
-
-    const newOpdEntry = new opdModel(opdData);
-    await newOpdEntry.save();
-
-    await Admin.findByIdAndUpdate(
-      hospitalId,
-      { $push: { opdForms: newOpdEntry._id } },
-      { new: true }
-    );
-
-    // Proceed with appointment booking
     if (!preferredSlot || typeof preferredSlot !== "string") {
       return res.status(400).json({ message: "Invalid preferredSlot format." });
     }
 
-    let OpdEntry = await opdModel.findOne({ contactNumber });
-    if (!OpdEntry) {
-      return res.status(404).json({ message: "OPD Form entry not found. Please register first." });
-    }
-
-    const today = new Date();
-    const localDate = today.toLocaleDateString("en-CA");
+    // --- Time and Slot Calculation (Performed BEFORE database writes) ---
     const { start, end, startStr, endStr } = parseSlotTime(preferredSlot);
+    const today = new Date();
+    const localDate = today.toLocaleDateString("en-CA"); // YYYY-MM-DD format
 
+    // ✅ NEW: Get current time in minutes from midnight for comparison.
+    const currentTimeInMinutes = today.getHours() * 60 + today.getMinutes();
+
+    // Find existing appointments to determine the next sequential slot.
     const existingAppointments = await opdModel
       .find({
         hospitalId,
         appointmentDate: localDate,
         preferredSlot: `${startStr} - ${endStr}`,
       })
-      .sort({ appointmentTime: 1 });
+      .sort({ appointmentTime: 1 }); // Sorting is still useful but our logic is more robust
 
-    let appointmentTime = start;
+    // --- Determine the next available time ---
+
+    // Possibility 1: The next slot in the sequence.
+    let nextSequentialTime = start; // Default to the start of the slot.
     if (existingAppointments.length > 0) {
-      const lastAppointmentTime = toMinutes(existingAppointments[existingAppointments.length - 1].appointmentTime);
-      appointmentTime = lastAppointmentTime + 20;
+      const lastAppointment = existingAppointments[existingAppointments.length - 1];
+      const lastAppointmentTimeInMinutes = toMinutes(lastAppointment.appointmentTime);
+
+      if (!isNaN(lastAppointmentTimeInMinutes)) {
+        nextSequentialTime = lastAppointmentTimeInMinutes + 20;
+      }
     }
 
-    if (appointmentTime < start) {
-      appointmentTime = start;
+    // ✅ NEW: Possibility 2: The earliest time from now (current time + 20 min buffer).
+    const earliestTimeFromNow = currentTimeInMinutes + 20;
+
+    // The final appointment time is the LATER of the two possibilities.
+    let appointmentTimeInMinutes = Math.max(nextSequentialTime, earliestTimeFromNow);
+
+    // ✅ NEW: Also ensure the appointment doesn't start before the slot officially begins.
+    // This handles cases where someone books at 8:00 AM for a 9:00 AM slot.
+    appointmentTimeInMinutes = Math.max(appointmentTimeInMinutes, start);
+
+    // --- Final Check and Database Write ---
+
+    // Check if the calculated time is still within the slot's range.
+    if (appointmentTimeInMinutes >= end) {
+      return res.status(400).json({
+        message: `Sorry, no available slots in the ${preferredSlot} timeframe. Please try a later slot.`,
+      });
     }
 
-    if (appointmentTime >= end) {
-      return res.status(400).json({ message: `No available slots in ${preferredSlot}.` });
-    }
+    // ✅ REFACTORED: Now that we have a valid time, create and save the record in one atomic operation.
+    const appointmentTimeStr = formatTime(appointmentTimeInMinutes);
 
+    // Get the next appointment number
     const counter = await Counter.findOneAndUpdate(
       { name: "appointmentNumber" },
       { $inc: { seq: 1 } },
       { new: true, upsert: true }
     );
 
-    OpdEntry.appointmentNumber = counter.seq;
-    OpdEntry.appointmentDate = localDate;
-    OpdEntry.appointmentTime = formatTime(appointmentTime);
-    OpdEntry.preferredSlot = `${startStr} - ${endStr}`;
+    const newOpdEntry = new opdModel({
+      ...req.body, // Includes fullName, contactNumber, email, etc.
+      hospitalId: new mongoose.Types.ObjectId(hospitalId),
+      appointmentNumber: counter.seq,
+      appointmentDate: localDate,
+      appointmentTime: appointmentTimeStr,
+      preferredSlot: `${startStr} - ${endStr}`,
+    });
 
-    await OpdEntry.save();
+    await newOpdEntry.save();
 
+    // Update the Admin model with the new OPD form reference.
+    await Admin.findByIdAndUpdate(
+      hospitalId,
+      { $push: { opdForms: newOpdEntry._id } },
+      { new: true }
+    );
+
+    // --- Send Confirmation Email ---
     if (email) {
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: email,
         subject: "Appointment Confirmation",
-        text: `Dear ${fullName},\n\nYour appointment is confirmed:\n📅 Date: ${localDate}\n🕒 Time: ${OpdEntry.appointmentTime}\n🔢 Appointment Number: ${OpdEntry.appointmentNumber}\n\nThank you for choosing our service.`,
+        text: `Dear ${fullName},\n\nYour appointment is confirmed:\n📅 Date: ${localDate}\n🕒 Time: ${appointmentTimeStr}\n🔢 Appointment Number: ${counter.seq}\n\nThank you for choosing our service.`,
       });
     }
 
-    res.status(201).json({ message: `Appointment booked successfully at ${OpdEntry.appointmentTime}` });
+    res.status(201).json({
+      message: `Appointment booked successfully at ${appointmentTimeStr}`,
+      appointment: newOpdEntry,
+    });
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ error: error.message });
+    console.error("Error booking appointment:", error);
+    res.status(500).json({ error: "An internal server error occurred." });
   }
 });
 

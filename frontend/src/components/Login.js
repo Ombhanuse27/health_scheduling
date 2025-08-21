@@ -9,12 +9,16 @@ const Login = () => {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const response = await loginAdmin(formData); // Use API function
       localStorage.setItem("token", response.data.token); // Store token
+      console.log("Login successful:", response.data); // Debugging
+
+
       alert("Login successful!");
       navigate("/dashboard"); // Redirect after login
     } catch (error) {

@@ -17,6 +17,7 @@ const doctorSchema = new mongoose.Schema({
       ref: 'OpdRecord',
     },
   ],
+  photo: { type: String }, // Store the file path or URL
 });
 
 const Doctor = mongoose.model("Doctor", doctorSchema);

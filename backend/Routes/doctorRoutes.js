@@ -80,6 +80,18 @@ router.get('/getDoctors', async (req, res) => {
     }
 });
   
+// Delete doctor by ID
+router.delete("/deleteDoctor/:id", async (req, res) => {
+  try {
+    const doctor = await Doctor.findByIdAndDelete(req.params.id);
+    if (!doctor) return res.status(404).json({ message: "Doctor not found" });
+
+    res.json({ message: "Doctor deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting doctor" });
+  }
+});
+
 
 
 // router.post("/prescriptions", authMiddleware, async (req, res) => {
