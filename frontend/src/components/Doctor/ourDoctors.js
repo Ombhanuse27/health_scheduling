@@ -128,7 +128,7 @@ function OurDoctors({ hospitalId }) {
                       </div>
                       {/* ✅ Action Button */}
                       <div className="px-4 pb-4 pt-2 border-t mt-2">
-                        <Link to={`/book-appointment/${doc._id}`} className="block w-full bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition text-center">
+                        <Link to="/opdForm" className="block w-full bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition text-center">
                           Book Appointment
                         </Link>
                       </div>
