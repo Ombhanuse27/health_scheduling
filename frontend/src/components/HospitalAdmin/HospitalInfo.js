@@ -46,20 +46,45 @@ const HospitalInfo = () => {
     setTimeout(() => setLoading(false), 1000);
   }, []);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  // src/components/HospitalInfo.js
 
-    if (name === "hospitalId") {
-      const selectedHospital = hospitals.find((hospital) => hospital._id === value);
+const handleChange = (e) => {
+  const { name, value } = e.target;
+
+  if (name === "hospitalId") {
+    // Find the full hospital object from the list
+    const selectedHospital = hospitals.find((hospital) => hospital._id === value);
+
+    if (selectedHospital) {
+      // ✅ Populate the ENTIRE form with the selected hospital's data
+      // We also ensure all form fields are present, even if null/undefined in the DB
       setFormData({
-        ...formData,
-        hospitalId: value,
-        hospitalName: selectedHospital ? selectedHospital.hospitalName : "",
+        ...formData, // Start with the base form structure
+        ...selectedHospital, // Overwrite with data from the selected hospital
+        hospitalId: selectedHospital._id, // Ensure hospitalId is correctly set from _id
       });
     } else {
-      setFormData({ ...formData, [name]: value });
+      // If "Select a hospital" is chosen, reset the form
+      setFormData({
+        hospitalImage: "",
+        hospitalId: "",
+        hospitalName: "",
+        hospitalStartTime: "",
+        hospitalEndTime: "",
+        Specialist: "",
+        opdFees: "",
+        contactNumber: "",
+        emergencyContact: "",
+        email: "",
+        address: "",
+        paymentMode: "",
+      });
     }
-  };
+  } else {
+    // For all other fields, update as usual
+    setFormData({ ...formData, [name]: value });
+  }
+};
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];

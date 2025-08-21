@@ -15,6 +15,7 @@ import DoctorSidebar from "./_components/DoctorSidebar";
 import DoctorInfo from "./components/Doctorsidebar/DoctorInfo";
 import PatientSidebar from "./_components/PatientSidebar";
 import DoctorSearchTable from "./components/DoctorSearchTable";
+import AdminDashboard from "./components/HospitalAdmin/AdminDashboard";
 
 
 function App() {
@@ -35,6 +36,15 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/DoctorSearchTable" element={<DoctorSearchTable />} />
+
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } 
+          />
 
         </Routes>
       </div>

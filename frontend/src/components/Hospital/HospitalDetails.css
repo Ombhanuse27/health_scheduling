@@ -14,6 +14,33 @@
     border: 1px solid #151414;
 }
 
+/* Add this to your HospitalDetails.css file */
+.interactive-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit; /* Keeps the original text color */
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  border-radius: 8px;
+  padding: 5px;
+  margin: 2px 0;
+}
+
+.interactive-link:hover {
+  background-color: #f0f4f8; /* A subtle highlight on hover */
+  transform: translateX(5px); /* Slightly moves the item on hover */
+}
+
+.hospital-card2 {
+    /* Adds a subtle lift effect to the whole card on hover */
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.hospital-card2:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
 
 .hospital-card2 {
     position: relative;

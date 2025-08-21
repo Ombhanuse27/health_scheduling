@@ -44,12 +44,18 @@ const HospitalDetails = () => {
   }, [hospitalId]);
 
   if (!hospital) {
-    return <p>Loading hospital details...</p>;
+    // A more visually appealing loading state
+    return (
+        <div className="flex justify-center items-center h-screen">
+            <div className="animate-spin rounded-full h-24 w-24 border-t-4 border-b-4 border-blue-500"></div>
+        </div>
+    );
   }
 
   return (
     <div className="hospital-container2">
       <Links />
+      {/* The main card now has a hover effect defined in HospitalDetails.css */}
       <div className="hospital-card2">
         <img src={hospital.hospitalImage} id="hospital-card-img2" alt={hospital.hospitalName} />
 
@@ -64,15 +70,26 @@ const HospitalDetails = () => {
           </div>
 
           <div className="hospital-contact">
-            <p id="location2" style={{ display: "flex" }}>
+            {/* ✅ INTERACTIVE LINK: Opens Google Maps with the address */}
+            <a 
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hospital.address)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              id="location2" 
+              className="interactive-link"
+            >
               <FontAwesomeIcon icon={faMapMarkerAlt} style={{ color: "#E63946", fontSize: "15px", padding: "5px", marginRight: "5px" }} /> {hospital.address}
-            </p>
-            <p id="ph_number2" style={{ display: "flex" }}>
+            </a>
+            
+            {/* ✅ INTERACTIVE LINK: Initiates a phone call on mobile devices */}
+            <a 
+              href={`tel:${hospital.contactNumber}`}
+              id="ph_number2"
+              className="interactive-link"
+            >
               <FontAwesomeIcon icon={faPhoneAlt} style={{ color: "#2ECC71", fontSize: "15px", padding: "5px", marginRight: "5px" }} /> {hospital.contactNumber}
-            </p>
+            </a>
           </div>
-
-         
         </div>
 
         <p id="rating2">
@@ -82,7 +99,9 @@ const HospitalDetails = () => {
           <FontAwesomeIcon icon={faStarHalfAlt} style={{ color: "#F1C40F" }} /> {hospital.rating}
         </p>
       </div>
-      <OurDoctors />
+      
+      {/* The OurDoctors component receives the hospitalId as before */}
+      <OurDoctors hospitalId={hospitalId} />
     </div>
   );
 };
