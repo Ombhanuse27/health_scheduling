@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// const BASE_URL = "http://localhost:5000/api"; // Use this for local development
-const BASE_URL = "https://health-scheduling.onrender.com/api"; // Use this for local development
+const BASE_URL = "http://localhost:5000/api"; // Use this for local development
+// const BASE_URL = "https://health-scheduling.onrender.com/api"; // Use this for local development
 
 
 
@@ -18,6 +18,9 @@ export const submitOpdForm = async (hospitalId, data) => {
     throw error;  
   }   
 };
+
+
+
 
 export const registerDoctor = async (data) => {
   try {

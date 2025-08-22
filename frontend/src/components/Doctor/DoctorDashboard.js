@@ -1,22 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { getRecords, getDoctorsData } from "../../api/api";
-import { savePrescriptionPdf, sendPrescriptionEmail } from "../../api/api";
+import {
+  getRecords,
+  getDoctorsData,
+  savePrescriptionPdf,
+  sendPrescriptionEmail,
+  getPrescriptions,
+} from "../../api/api";
 import { jsPDF } from "jspdf";
-import { getPrescriptions } from "../../api/api";
 
 const DoctorDashboard = ({ children }) => {
   const [opdRecords, setOpdRecords] = useState([]);
   const [loggedInDoctor, setLoggedInDoctor] = useState(null);
-
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
-  const token = localStorage.getItem("token");
-  const username = localStorage.getItem("username"); // stored during login
-
-  const [prescriptionsMap, setPrescriptionsMap] = useState({});
-
+  // 🟢 Changed: Default selectedDate is now an empty string to show "All Dates" by default.
+  const [selectedDate, setSelectedDate] = useState("");
   const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [prescription, setPrescription] = useState({
@@ -25,18 +22,90 @@ const DoctorDashboard = ({ children }) => {
     advice: "",
   });
 
+  const token = localStorage.getItem("token");
+
+  // Fetch and process data on component mount
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      try {
+        // Fetch all necessary data in parallel
+        const [opdResponse, doctors, prescriptionsResponse] = await Promise.all([
+          getRecords(token),
+          getDoctorsData(token),
+          getPrescriptions(token),
+        ]);
+
+        const opdData = opdResponse.data;
+        const prescriptions = prescriptionsResponse.data;
+
+        // Find the currently logged-in doctor
+        const username = localStorage.getItem("username");
+        const currentDoctor = doctors.find((doc) => doc.username === username);
+
+        if (!currentDoctor) {
+          alert("Could not identify the logged-in doctor.");
+          setLoading(false);
+          return;
+        }
+        setLoggedInDoctor(currentDoctor);
+
+        // Filter OPD records for the logged-in doctor
+        const assignedRecords = opdData.filter((record) => {
+          const assignedDoctorId = record.assignedDoctor?.$oid || record.assignedDoctor;
+          const loggedInDoctorId = currentDoctor._id?.$oid || currentDoctor._id;
+          return assignedDoctorId === loggedInDoctorId;
+        });
+
+        // 🟢 Create a map of prescriptions for easy lookup
+        const prescriptionsMap = new Map(
+          prescriptions.map((p) => [p.appointmentId, p])
+        );
+
+        // 🟢 Enrich OPD records with existing prescription data
+        const enrichedRecords = assignedRecords.map((record) => {
+          const existingPrescription = prescriptionsMap.get(record._id);
+          if (existingPrescription) {
+            return {
+              ...record,
+              diagnosis: existingPrescription.diagnosis,
+              medication: existingPrescription.medication,
+              advice: existingPrescription.advice,
+              prescriptionPdf: {
+                data: existingPrescription.pdfBase64,
+                contentType: "application/pdf",
+              },
+            };
+          }
+          return record;
+        });
+
+        setOpdRecords(enrichedRecords);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        alert("An error occurred while fetching data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInitialData();
+  }, [token]);
+
   const handleOpenPrescriptionForm = (record) => {
     setSelectedRecord(record);
-    setPrescription({
-      diagnosis: "",
-      medication: "",
-      advice: "",
-    });
+    // Reset form for a new prescription
+    setPrescription({ diagnosis: "", medication: "", advice: "" });
     setShowPrescriptionModal(true);
   };
 
   const handleEditPrescription = (record) => {
     setSelectedRecord(record);
+    // Pre-fill form with existing prescription data
     setPrescription({
       diagnosis: record.diagnosis || "",
       medication: record.medication || "",
@@ -45,160 +114,105 @@ const DoctorDashboard = ({ children }) => {
     setShowPrescriptionModal(true);
   };
 
-const generatePdfBase64 = (doctor) => {
-  const doc = new jsPDF();
-  const doctorName = doctor?.fullName || "Doctor Name";
-  const qualification = doctor?.specialization || "Qualification";
-  const hospital = doctor?.hospital || "Clinic Name";
-  const contact = doctor?.phone || "+91-XXXXXXXXXX";
-  const address = doctor?.address || "Clinic Address Here";
-  
-  // Header Section
-  // Top Blue Line
-  doc.setDrawColor(0, 176, 240);
-  doc.setLineWidth(2);
-  doc.line(10, 20, 200, 20);
-  
-  // Doctor Info (Left Side)
-  doc.setTextColor(0, 102, 204);
-  doc.setFontSize(20);
-  doc.setFont("helvetica", "bold");
-  doc.text(`Dr. ${doctorName}`, 10, 15);
-  
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(100);
-  doc.text(qualification, 10, 25);
-  
-  // Medical Icon (Right Side)
-  doc.setFontSize(30);
-  doc.setTextColor(0, 102, 204);
-  doc.text("⚕️", 180, 18);
-  
-  // Patient Details Section
-  doc.setFontSize(11);
-  doc.setTextColor(0);
-  doc.setFont("helvetica", "bold");
-  doc.text("PATIENT DETAILS", 10, 40);
-  
-  // Patient info in organized layout
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.text(`Patient Name: ${selectedRecord.fullName}`, 10, 48);
-  doc.text(`Date: ${selectedDate}`, 120, 48);
-  
-  doc.text(`Age: ${selectedRecord.age || "N/A"}`, 10, 55);
-  doc.text(`Gender: ${selectedRecord.gender || "N/A"}`, 60, 55);
-  
-  doc.text(`Diagnosis: ${prescription.diagnosis}`, 10, 62);
-  
-  // Separator line
-  doc.setDrawColor(200);
-  doc.setLineWidth(0.5);
-  doc.line(10, 68, 200, 68);
-  
-  // Prescription Symbol (Rx)
-  doc.setFontSize(32);
-  doc.setTextColor(0, 102, 204);
-  doc.text("℞", 10, 85);
-  
-  // Medication Section
-  doc.setFontSize(12);
-  doc.setTextColor(0);
-  doc.setFont("helvetica", "bold");
-  doc.text("MEDICATION:", 25, 85);
-  
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  const medicationLines = doc.splitTextToSize(prescription.medication, 170);
-  doc.text(medicationLines, 25, 93);
-  
-  // Calculate next section position based on medication text height
-  const medicationHeight = medicationLines.length * 5; // Approximate line height
-  const adviceStartY = 93 + medicationHeight + 15;
-  
-  // Advice Section
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.text("ADVICE:", 25, adviceStartY);
-  
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  const adviceLines = doc.splitTextToSize(prescription.advice, 170);
-  doc.text(adviceLines, 25, adviceStartY + 8);
-  
-  // Calculate signature position
-  const adviceHeight = adviceLines.length * 5;
-  const signatureY = Math.max(adviceStartY + adviceHeight + 30, 220); // Ensure minimum distance from top
-  
-  // Signature Section
-  doc.setDrawColor(100);
-  doc.setLineWidth(0.5);
-  doc.line(130, signatureY, 190, signatureY);
-  doc.setFontSize(9);
-  doc.setTextColor(80);
-  doc.text("Doctor's Signature", 145, signatureY + 6);
-  
-  // Footer Section
-  const footerY = 280;
-  doc.setDrawColor(0, 176, 240);
-  doc.setLineWidth(1);
-  doc.line(10, footerY - 5, 200, footerY - 5);
-  
-  doc.setFontSize(9);
-  doc.setTextColor(60);
-  doc.setFont("helvetica", "normal");
-  
-  // Hospital name (left)
-  doc.text(hospital, 10, footerY);
-  
-  // Address (center)
-  const addressText = `📍 ${address}`;
-  const addressWidth = doc.getTextWidth(addressText);
-  doc.text(addressText, (210 - addressWidth) / 2, footerY);
-  
-  // Contact (right)
-  const contactText = `📞 ${contact}`;
-  const contactWidth = doc.getTextWidth(contactText);
-  doc.text(contactText, 200 - contactWidth, footerY);
-  
-  // Export base64
-  return doc.output("datauristring").split(",")[1];
-};
+  const generatePdfBase64 = (doctor, record, prescrData) => {
+    const doc = new jsPDF();
+    const doctorName = doctor?.fullName || "N/A";
+    const qualification = doctor?.specialization || "N/A";
+    const hospital = doctor?.hospital || "Clinic";
+    const contact = doctor?.phone || "N/A";
+    const address = doctor?.address || "N/A";
 
+    // Header
+    doc.setDrawColor(0, 176, 240);
+    doc.setLineWidth(2);
+    doc.line(10, 20, 200, 20);
+    doc.setTextColor(0, 102, 204);
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Dr. ${doctorName}`, 10, 15);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100);
+    doc.text(qualification, 10, 25);
+    doc.setFontSize(30);
+    doc.setTextColor(0, 102, 204);
+    doc.text("⚕️", 180, 18);
 
+    // Patient Details
+    doc.setFontSize(11);
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
+    doc.text("PATIENT DETAILS", 10, 40);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(`Patient Name: ${record.fullName}`, 10, 48);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 120, 48);
+    doc.text(`Age: ${record.age || "N/A"}`, 10, 55);
+    doc.text(`Gender: ${record.gender || "N/A"}`, 60, 55);
+    doc.text(`Diagnosis: ${prescrData.diagnosis}`, 10, 62);
 
-  const sendEmail = async (recordId) => {
-    const record = opdRecords.find((r) => r._id === recordId);
-    const pdfBase64 = prescriptionsMap[recordId];
+    // Prescription Body
+    doc.setDrawColor(200);
+    doc.setLineWidth(0.5);
+    doc.line(10, 68, 200, 68);
+    doc.setFontSize(32);
+    doc.setTextColor(0, 102, 204);
+    doc.text("℞", 10, 85);
 
-    if (!record || !record.email) {
-      alert("Patient email not found.");
-      return;
-    }
+    // Medication
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
+    doc.text("MEDICATION:", 25, 85);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const medicationLines = doc.splitTextToSize(prescrData.medication, 170);
+    doc.text(medicationLines, 25, 93);
 
-    const confirmSend = window.confirm(
-      `Are you sure you want to send the prescription to ${record.fullName}?`
-    );
-    if (!confirmSend) return;
+    // Advice
+    const medicationHeight = medicationLines.length * 5;
+    const adviceStartY = 93 + medicationHeight + 15;
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("ADVICE:", 25, adviceStartY);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const adviceLines = doc.splitTextToSize(prescrData.advice, 170);
+    doc.text(adviceLines, 25, adviceStartY + 8);
 
-    try {
-      await sendPrescriptionEmail({
-        email: record.email,
-        patientName: record.fullName,
-        pdfBase64,
-      });
-      alert("Email sent successfully to the patient.");
-    } catch (err) {
-      console.error("Failed to send email:", err);
-      alert("Failed to send email.");
-    }
+    // Signature
+    const adviceHeight = adviceLines.length * 5;
+    const signatureY = Math.max(adviceStartY + adviceHeight + 30, 220);
+    doc.setDrawColor(100);
+    doc.line(130, signatureY, 190, signatureY);
+    doc.setFontSize(9);
+    doc.setTextColor(80);
+    doc.text("Doctor's Signature", 145, signatureY + 6);
+
+    // Footer
+    const footerY = 280;
+    doc.setDrawColor(0, 176, 240);
+    doc.setLineWidth(1);
+    doc.line(10, footerY - 5, 200, footerY - 5);
+    doc.setFontSize(9);
+    doc.setTextColor(60);
+    doc.text(hospital, 10, footerY);
+    const addressText = `📍 ${address}`;
+    doc.text(addressText, (210 - doc.getTextWidth(addressText)) / 2, footerY);
+    const contactText = `📞 ${contact}`;
+    doc.text(contactText, 200 - doc.getTextWidth(contactText), footerY);
+
+    return doc.output("datauristring").split(",")[1];
   };
 
   const handleSavePrescription = async () => {
     if (!selectedRecord) return;
 
-    const pdfBase64 = generatePdfBase64(loggedInDoctor);
+    const pdfBase64 = generatePdfBase64(
+      loggedInDoctor,
+      selectedRecord,
+      prescription
+    );
 
     try {
       await savePrescriptionPdf(
@@ -209,314 +223,259 @@ const generatePdfBase64 = (doctor) => {
         prescription.medication,
         prescription.advice
       );
+      alert("Prescription saved successfully.");
 
-      alert("Prescription saved or updated successfully.");
-
-      // 🟢 Update both maps and selectedRecord locally to reflect change in UI
+      // 🟢 Update the record in the state to immediately reflect the change
       setOpdRecords((prevRecords) =>
         prevRecords.map((rec) =>
           rec._id === selectedRecord._id
             ? {
                 ...rec,
+                ...prescription, // Add diagnosis, medication, advice
                 prescriptionPdf: {
                   data: pdfBase64,
                   contentType: "application/pdf",
                 },
-                diagnosis: prescription.diagnosis,
-                medication: prescription.medication,
-                advice: prescription.advice,
               }
             : rec
         )
       );
 
-      setPrescriptionsMap((prev) => ({
-        ...prev,
-        [selectedRecord._id]: pdfBase64,
-      }));
+      setShowPrescriptionModal(false);
     } catch (error) {
-      console.error("Error saving ", error);
-      alert("Failed to store.");
+      console.error("Error saving prescription:", error);
+      alert("Failed to save the prescription.");
+    }
+  };
+
+  const sendEmail = async (recordId) => {
+    const record = opdRecords.find((r) => r._id === recordId);
+    if (!record?.email) {
+      alert("Patient email address not found.");
+      return;
+    }
+    if (!record.prescriptionPdf?.data) {
+      alert("No prescription found to send.");
+      return;
     }
 
-    setShowPrescriptionModal(false);
-    setPrescription({ diagnosis: "", medication: "", advice: "" });
+    if (
+      !window.confirm(
+        `Are you sure you want to email the prescription to ${record.fullName}?`
+      )
+    )
+      return;
+
+    try {
+      await sendPrescriptionEmail({
+        email: record.email,
+        patientName: record.fullName,
+        pdfBase64: record.prescriptionPdf.data,
+      });
+      alert("Email sent successfully!");
+    } catch (err) {
+      console.error("Failed to send email:", err);
+      alert("Failed to send the email.");
+    }
   };
 
-  useEffect(() => {
-    const fetchRecords = async () => {
-      setLoading(true);
-      try {
-        const { data: opdData } = await getRecords(token);
-        const allDoctors = await getDoctorsData(token);
+  // Memoize unique dates to prevent recalculation on every render
+  const uniqueDates = React.useMemo(
+    () => [...new Set(opdRecords.map((record) => record.appointmentDate))],
+    [opdRecords]
+  );
 
-        const { data: prescriptions } = await getPrescriptions(token);
+  // Filter and sort records based on the selected date
+  const filteredRecords = React.useMemo(() => {
+    const recordsToFilter = selectedDate
+      ? opdRecords.filter((record) => record.appointmentDate === selectedDate)
+      : opdRecords;
 
-        // Create a map of appointmentId => prescriptionBase64
-        const map = {};
-        prescriptions.forEach((presc) => {
-          map[presc.appointmentId] = presc.pdfBase64;
-        });
-        setPrescriptionsMap(map);
-
-        console.log("OPD Data:", opdData);
-        const username = localStorage.getItem("username");
-        const loggedInDoctor = allDoctors.find(
-          (doc) => doc.username === username
-        );
-
-        if (!loggedInDoctor) {
-          alert("Doctor not found.");
-          return;
-        }
-        setLoggedInDoctor(loggedInDoctor);
-
-        console.log("Logged in Doctor:", loggedInDoctor);
-
-        // Filter OPD records assigned to this doctor
-        const assignedRecords = opdData.filter((record) => {
-          const assignedDoctorId =
-            record.assignedDoctor?.$oid || record.assignedDoctor;
-          const loggedInDoctorId =
-            loggedInDoctor._id?.$oid || loggedInDoctor._id;
-          return assignedDoctorId === loggedInDoctorId;
-        });
-
-        setOpdRecords(assignedRecords);
-      } catch (error) {
-        alert("Error fetching data");
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRecords();
-  }, [token]);
-
-  const uniqueDates = [
-    ...new Set(opdRecords.map((record) => record.appointmentDate)),
-  ];
-
-  const parseTimeToDate = (timeStr) => {
-    return new Date(
-      `2000-01-01T${new Date(`2000/01/01 ${timeStr}`)
-        .toTimeString()
-        .slice(0, 8)}`
+    const parseTime = (timeStr) =>
+      new Date(`1970-01-01T${timeStr}`).getTime();
+    return recordsToFilter.sort(
+      (a, b) => parseTime(a.appointmentTime) - parseTime(b.appointmentTime)
     );
-  };
-
-  const filteredRecords = selectedDate
-    ? opdRecords
-        .filter((record) => record.appointmentDate === selectedDate)
-        .sort(
-          (a, b) =>
-            parseTimeToDate(a.appointmentTime) -
-            parseTimeToDate(b.appointmentTime)
-        )
-    : opdRecords.sort(
-        (a, b) =>
-          parseTimeToDate(a.appointmentTime) -
-          parseTimeToDate(b.appointmentTime)
-      );
+  }, [opdRecords, selectedDate]);
 
   return (
-    <div className="flex flex-1">
-      <div className="p-2 md:px-20 py-10 border-neutral-200 dark:border-neutral-700 bg-blue-200 flex flex-col gap-2 flex-1 w-full h-full">
-        {loading ? (
-          <>
-            <input className="h-10 w-60 bg-gray-100 dark:bg-neutral-800 animate-pulse ml-auto" />
-            <div className="flex gap-2 md:mt-10">
-              {[...new Array(7)].map((_, i) => (
-                <div
-                  key={"first-array" + i}
-                  className="h-20 w-full rounded-lg bg-gray-100 dark:bg-neutral-800 animate-pulse"
-                ></div>
-              ))}
-            </div>
-            <div className="flex gap-2 flex-1 min-h-[100px]">
-              <div className="h-20 w-full rounded-lg bg-gray-100 dark:bg-neutral-800 animate-pulse"></div>
-            </div>
-          </>
-        ) : (
-          <div className="p-6 md:px-20 py-10 flex flex-col gap-4 flex-1 w-full h-full">
-            <h2 className="text-5xl font-extrabold mb-6 text-red-500 text-center uppercase tracking-wide">
-              Appointment List
-            </h2>
+    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-4xl font-bold mb-6 text-gray-800 text-center">
+          Doctor's Dashboard
+        </h1>
 
-            <input
-              className="h-12 w-80 rounded-lg bg-white text-gray-700 px-4 ml-auto border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-500 transition-shadow shadow-md hover:shadow-lg"
-              placeholder="Search records..."
-            />
-            <div className="mb-4">
-              <label className="text-lg text-black font-semibold mr-2">
-                Select Date:
-              </label>
-              <select
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-4 py-2 text-lg text-black border rounded bg-gray-400"
-              >
-                <option className="text-black" value="">
-                  All Dates
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-2">
+            <label htmlFor="date-select" className="font-semibold text-gray-700">
+              Filter by Date:
+            </label>
+            <select
+              id="date-select"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="" className="text-black">All Dates</option>
+              {uniqueDates.map((date) => (
+                <option key={date} value={date}>
+                  {new Date(date).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
                 </option>
-                {uniqueDates.map((date) => (
-                  <option key={date} value={date}>
-                    {date}
-                  </option>
-                ))}
-              </select>
-            </div>
+              ))}
+            </select>
+          </div>
+        </div>
 
-            <table className="w-full border-collapse bg-white rounded-lg overflow-hidden shadow-lg mt-6">
-              <thead>
-                <tr className="bg-gradient-to-r from-gray-200 to-gray-300 text-gray-700 text-lg">
-                  <th className="p-4 text-left">Full Name</th>
-                  <th className="p-4 text-left">Age</th>
-                  <th className="p-4 text-left">Symptoms</th>
-                  <th className="p-4 text-left">Appointment Number</th>
-                  <th className="p-4 text-left">Appointment Date</th>
-                  <th className="p-4 text-left">Appointment Time</th>
-                  <th className="p-4 text-left">Prescription</th>
+        {loading ? (
+          <p className="text-center text-gray-500">Loading appointments...</p>
+        ) : (
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <table className="w-full text-left">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="p-4 font-semibold text-gray-600">Patient</th>
+                  <th className="p-4 font-semibold text-gray-600">Symptoms</th>
+                  <th className="p-4 font-semibold text-gray-600">Appointment</th>
+                  <th className="p-4 font-semibold text-gray-600">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredRecords.length > 0 ? (
-                  filteredRecords.map((record, index) => (
-                    <tr key={index} className="border text-black">
-                      <td className="border p-2">{record.fullName}</td>
-                      <td className="border p-2">{record.age}</td>
-                      <td className="border p-2">{record.symptoms}</td>
-                      <td className="border p-2">{record.appointmentNumber}</td>
-                      <td className="border p-2">{record.appointmentDate}</td>
-                      <td className="border p-2">{record.appointmentTime}</td>
-                      <td className="border p-2">
-                      {record.prescriptionPdf?.data ? (
-  <>
-    <button
-      className="bg-green-500 text-white px-4 py-1 rounded mr-2 cursor-default transition transform hover:scale-105"
-      title="Prescription already added"
-    >
-      ✅ Added
-    </button>
-
-    <button
-      onClick={() => {
-        const win = window.open();
-        win.document.write(
-          `<iframe src="data:application/pdf;base64,${record.prescriptionPdf?.data}" width="100%" height="100%"></iframe>`
-        );
-      }}
-      className="bg-purple-500 hover:bg-purple-700 text-white px-4 py-1 rounded transition transform hover:scale-105 shadow"
-      title="View PDF"
-    >
-      📄 View
-    </button>
-
-    <button
-      onClick={() => handleEditPrescription(record)}
-      className="bg-blue-600 hover:bg-blue-800 text-white px-4 py-1 rounded transition transform hover:scale-105 shadow"
-      title="Edit Prescription"
-    >
-      ✏️ Edit
-    </button>
-
-    <button
-      onClick={() => sendEmail(record._id)}
-      className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-1 rounded transition transform hover:scale-105 shadow"
-      title="Send Email"
-    >
-      📧 Send
-    </button>
-  </>
-) : (
-  <button
-    onClick={() => handleOpenPrescriptionForm(record)}
-    className="bg-blue-500 hover:bg-blue-700 text-white px-4 py-1 rounded transition transform hover:scale-105 shadow"
-    title="Add Prescription"
-  >
-    ➕ Add
-  </button>
-)}
-
+                  filteredRecords.map((record) => (
+                    <tr key={record._id} className="border-t border-gray-200 hover:bg-gray-50">
+                      <td className="p-4">
+                        <div className="font-medium text-gray-900">{record.fullName}</div>
+                        <div className="text-sm text-gray-500">Age: {record.age}</div>
+                      </td>
+                      <td className="p-4 text-gray-700">{record.symptoms}</td>
+                      <td className="p-4">
+                        <div className="text-gray-900">{record.appointmentDate}</div>
+                        <div className="text-sm text-gray-500">{record.appointmentTime}</div>
+                      </td>
+                      <td className="p-4">
+                        {/* 🟢 Improved Button UI */}
+                        <div className="flex items-center gap-2">
+                          {record.prescriptionPdf?.data ? (
+                            <>
+                              <button
+                                onClick={() => {
+                                  const win = window.open();
+                                  win.document.write(
+                                    `<iframe src="data:application/pdf;base64,${record.prescriptionPdf.data}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`
+                                  );
+                                }}
+                                className="px-3 py-1 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition"
+                                title="View PDF"
+                              >
+                                📄 View
+                              </button>
+                              <button
+                                onClick={() => handleEditPrescription(record)}
+                                className="px-3 py-1 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition"
+                                title="Edit Prescription"
+                              >
+                                ✏️ Edit
+                              </button>
+                              <button
+                                onClick={() => sendEmail(record._id)}
+                                className="px-3 py-1 text-sm font-medium text-white bg-yellow-500 rounded-md hover:bg-yellow-600 transition"
+                                title="Send Email"
+                              >
+                                📧 Send
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => handleOpenPrescriptionForm(record)}
+                              className="px-3 py-1 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition"
+                              title="Add Prescription"
+                            >
+                              ➕ Add Prescription
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6" className="text-center p-4">
-                      No records found for this date.
+                    <td colSpan="4" className="text-center p-6 text-gray-500">
+                      No records found for the selected date.
                     </td>
                   </tr>
                 )}
-
-                {showPrescriptionModal && (
-                  <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-                    <div className="bg-white p-6 rounded-lg w-[400px]">
-                      <h2 className="text-xl font-bold mb-4 text-black">
-                        Add Prescription
-                      </h2>
-
-                      <input
-                        type="text"
-                        placeholder="Diagnosis"
-                        className="border w-full p-2 mb-2 text-black"
-                        value={prescription.diagnosis}
-                        onChange={(e) =>
-                          setPrescription({
-                            ...prescription,
-                            diagnosis: e.target.value,
-                          })
-                        }
-                      />
-                      <input
-                        type="text"
-                        placeholder="Medication"
-                        className="border w-full p-2 mb-2 text-black"
-                        value={prescription.medication}
-                        onChange={(e) =>
-                          setPrescription({
-                            ...prescription,
-                            medication: e.target.value,
-                          })
-                        }
-                      />
-                      <input
-                        type="text"
-                        placeholder="Advice"
-                        className="border w-full p-2 mb-2 text-black"
-                        value={prescription.advice}
-                        onChange={(e) =>
-                          setPrescription({
-                            ...prescription,
-                            advice: e.target.value,
-                          })
-                        }
-                      />
-
-                      <div className="flex justify-between mt-4">
-                        <button
-                          className="bg-green-500 text-white px-4 py-1 rounded"
-                          onClick={handleSavePrescription}
-                        >
-                          Save
-                        </button>
-                        <button
-                          className="bg-gray-500 text-white px-4 py-1 rounded"
-                          onClick={() => setShowPrescriptionModal(false)}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </tbody>
             </table>
-            {children}
           </div>
         )}
       </div>
+
+      {/* 🟢 Improved Prescription Modal UI */}
+      {showPrescriptionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50">
+          <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg transform transition-all">
+            <h2 className="text-2xl font-bold mb-2 text-gray-800">
+              Prescription
+            </h2>
+            <p className="mb-6 text-gray-600">
+              For:{" "}
+              <span className="font-semibold">{selectedRecord?.fullName}</span>
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Diagnosis</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Viral Fever"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  value={prescription.diagnosis}
+                  onChange={(e) => setPrescription({ ...prescription, diagnosis: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Medication (Rx)</label>
+                <textarea
+                  placeholder="e.g., Paracetamol 500mg - 1 tablet twice a day"
+                  rows="4"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  value={prescription.medication}
+                  onChange={(e) => setPrescription({ ...prescription, medication: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Advice</label>
+                <textarea
+                  placeholder="e.g., Take complete rest, drink plenty of fluids"
+                  rows="3"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  value={prescription.advice}
+                  onChange={(e) => setPrescription({ ...prescription, advice: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-4 mt-8">
+              <button
+                className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition"
+                onClick={() => setShowPrescriptionModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition"
+                onClick={handleSavePrescription}
+              >
+                Save Prescription
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
