@@ -432,7 +432,7 @@ const DoctorDashboard = ({ children }) => {
                 <input
                   type="text"
                   placeholder="e.g., Viral Fever"
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border border-gray-300 text-black rounded-md focus:ring-2 focus:ring-blue-500"
                   value={prescription.diagnosis}
                   onChange={(e) => setPrescription({ ...prescription, diagnosis: e.target.value })}
                 />
@@ -442,7 +442,7 @@ const DoctorDashboard = ({ children }) => {
                 <textarea
                   placeholder="e.g., Paracetamol 500mg - 1 tablet twice a day"
                   rows="4"
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border border-gray-300 text-black rounded-md focus:ring-2 focus:ring-blue-500"
                   value={prescription.medication}
                   onChange={(e) => setPrescription({ ...prescription, medication: e.target.value })}
                 />
@@ -452,7 +452,7 @@ const DoctorDashboard = ({ children }) => {
                 <textarea
                   placeholder="e.g., Take complete rest, drink plenty of fluids"
                   rows="3"
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-2 border border-gray-300 text-black rounded-md focus:ring-2 focus:ring-blue-500"
                   value={prescription.advice}
                   onChange={(e) => setPrescription({ ...prescription, advice: e.target.value })}
                 />

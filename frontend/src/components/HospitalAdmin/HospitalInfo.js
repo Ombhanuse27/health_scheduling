@@ -1,90 +1,65 @@
 import { useState, useEffect } from "react";
-import { submitHospitalInfo, getHospitals } from "../../api/api";
+import { submitHospitalInfo, getLoggedInHospital } from "../../api/api";
 
-const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/da9xvfoye/upload";  
-const CLOUDINARY_PRESET = "ml_default";  
+const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/da9xvfoye/upload";
+const CLOUDINARY_PRESET = "ml_default";
 
 const HospitalInfo = () => {
   const [formData, setFormData] = useState({
     hospitalImage: "",
     hospitalId: "",
+    username: "",
     hospitalName: "",
     hospitalStartTime: "",
     hospitalEndTime: "",
     Specialist: "",
-    opdFees: "",
     contactNumber: "",
     emergencyContact: "",
     email: "",
     address: "",
-    paymentMode: "",
+    aboutHospital: "",
+    numberOfBeds: "",
+    accreditations: "",
+    website: "",
   });
 
-  const [hospitals, setHospitals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState({});
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    const fetchHospitals = async () => {
+    const fetchHospitalData = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Authentication token not found. Please log in again.");
+        setLoading(false);
+        return;
+      }
+
       try {
-        const data = await getHospitals();
-        if (Array.isArray(data)) {
-          setHospitals(data);
-          console.log("Hospitals fetched:", data);
-        } else {
-          console.error("Unexpected response format:", data);
-          alert("Error fetching hospital list");
-        }
+        const response = await getLoggedInHospital(token);
+        const hospitalData = response.data;
+
+        setFormData((prevData) => ({
+          ...prevData,
+          ...hospitalData,
+          hospitalId: hospitalData._id,
+        }));
       } catch (error) {
-        console.error("Error fetching hospitals:", error);
-        alert("Error fetching hospital list");
+        console.error("Error fetching hospital data:", error);
+        alert("Could not fetch your hospital's information.");
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchHospitals();
-    setTimeout(() => setLoading(false), 1000);
+    fetchHospitalData();
   }, []);
 
-  // src/components/HospitalInfo.js
-
-const handleChange = (e) => {
-  const { name, value } = e.target;
-
-  if (name === "hospitalId") {
-    // Find the full hospital object from the list
-    const selectedHospital = hospitals.find((hospital) => hospital._id === value);
-
-    if (selectedHospital) {
-      // ✅ Populate the ENTIRE form with the selected hospital's data
-      // We also ensure all form fields are present, even if null/undefined in the DB
-      setFormData({
-        ...formData, // Start with the base form structure
-        ...selectedHospital, // Overwrite with data from the selected hospital
-        hospitalId: selectedHospital._id, // Ensure hospitalId is correctly set from _id
-      });
-    } else {
-      // If "Select a hospital" is chosen, reset the form
-      setFormData({
-        hospitalImage: "",
-        hospitalId: "",
-        hospitalName: "",
-        hospitalStartTime: "",
-        hospitalEndTime: "",
-        Specialist: "",
-        opdFees: "",
-        contactNumber: "",
-        emergencyContact: "",
-        email: "",
-        address: "",
-        paymentMode: "",
-      });
-    }
-  } else {
-    // For all other fields, update as usual
+  const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-  }
-};
+  };
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -92,14 +67,14 @@ const handleChange = (e) => {
 
     setUploading(true);
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_PRESET);
+    const formDataForUpload = new FormData();
+    formDataForUpload.append("file", file);
+    formDataForUpload.append("upload_preset", CLOUDINARY_PRESET);
 
     try {
       const response = await fetch(CLOUDINARY_URL, {
         method: "POST",
-        body: formData,
+        body: formDataForUpload,
       });
       const data = await response.json();
       setFormData((prevData) => ({
@@ -115,18 +90,25 @@ const handleChange = (e) => {
     }
   };
 
-
-  console.log(formData.hospitalId)
-  console.log(formData)
-
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.hospitalId) {
+        alert("Hospital information is not loaded. Cannot submit.");
+        return;
+    }
     try {
       await submitHospitalInfo(formData.hospitalId, formData);
       alert("Hospital details submitted successfully!");
     } catch (error) {
       alert("Error submitting hospital details");
     }
+  };
+
+  const getInputType = (key) => {
+    if (key === "email") return "email";
+    if (key === "numberOfBeds") return "number";
+    if (key === "website") return "url";
+    return "text";
   };
 
   return (
@@ -136,19 +118,9 @@ const handleChange = (e) => {
           Hospital Details
         </h2>
 
-        
-
         {loading ? (
           <div className="animate-pulse space-y-6">
-            <div className="w-40 h-40 bg-gray-300 rounded-full mx-auto relative">
-              {formData.hospitalImage && (
-                <img
-                  src={formData.hospitalImage}
-                  alt="Hospital"
-                  className="w-full h-full rounded-full object-cover"
-                />
-              )}
-            </div>
+            <div className="w-40 h-40 bg-gray-300 rounded-full mx-auto"></div>
             {[...Array(10)].map((_, i) => (
               <div key={i} className="w-full h-12 bg-gray-200 dark:bg-neutral-700 rounded-lg"></div>
             ))}
@@ -159,75 +131,61 @@ const handleChange = (e) => {
             <div className="flex justify-center items-center col-span-1 md:col-span-2">
               <label htmlFor="hospitalImage" className="relative w-40 h-40 rounded-full bg-gray-100 dark:bg-neutral-700 border-4 border-blue-500 cursor-pointer flex items-center justify-center">
                 {formData.hospitalImage ? (
-                  <img
-                    src={formData.hospitalImage}
-                    alt="Hospital"
-                    className="w-full h-full rounded-2 object-cover"
-                  />
+                  <img src={formData.hospitalImage} alt="Hospital" className="w-full h-full rounded-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    Upload Image
-                  </div>
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">Upload Image</div>
                 )}
                 <div className="absolute bottom-1 right-1 bg-blue-500 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg">+</div>
-                <input
-                  type="file"
-                  id="hospitalImage"
-                  name="hospitalImage"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
+                <input type="file" id="hospitalImage" name="hospitalImage" accept="image/*" onChange={handleImageUpload} className="hidden" />
               </label>
             </div>
 
             <div className="flex flex-col">
-            <label htmlFor="hospitalId" className="block text-sm  font-medium text-black mb-1">
-              Select Hospital (Admin Username)
-            </label>
-            <select
-              id="hospitalId"
-              name="hospitalId"  // Fix: Corrected the name attribute
-              value={formData.hospitalId}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg  text-gray-700 focus:ring-2 focus:ring-blue-500"
-              required
-            >
-              <option value="">Select a hospital</option>
-              {hospitals.length > 0 ? (
-                hospitals.map((hospital) => (
-                  <option key={hospital._id} value={hospital._id}>
-                  
-                    {hospital.username} 
-                  </option>
-                ))
-              ) : (
-                <option disabled>Loading hospitals...</option>
-              )}
-            </select>
-          </div>
+              <label htmlFor="username" className="block text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                Admin Username
+              </label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                value={formData.username || ""}
+                className="w-full text-lg px-4 py-3 border-2 border-gray-300 rounded-lg bg-gray-200 dark:bg-neutral-600 cursor-not-allowed"
+                readOnly
+              />
+            </div>
 
-            
-            {/* Other Form Fields */}
             {Object.keys(formData)
-              .filter((key) => key !== "hospitalId" && key !== "hospitalImage")
+              .filter(
+                (key) => !["hospitalId", "hospitalImage", "username", "_id", "__v"].includes(key)
+              )
               .map((key) => (
                 <div key={key} className="flex flex-col">
                   <label className="block text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-1 capitalize">
                     {key.replace(/([A-Z])/g, " $1").trim()}
                   </label>
-                  <input
-                    type={key === "email" ? "email" : key === "opdFees" ? "number" : "text"}
-                    name={key}
-                    value={formData[key]}
-                    onChange={handleChange}
-                    placeholder={`Enter ${key.replace(/([A-Z])/g, " $1").trim()}`}
-                    className="w-full text-lg px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-gray-50 dark:bg-neutral-700 text-gray-900 dark:text-white"
-                  />
+                  
+                  {key === "aboutHospital" ? (
+                    <textarea
+                      name={key}
+                      value={formData[key] || ""}
+                      onChange={handleChange}
+                      rows={4}
+                      placeholder={`Enter ${key.replace(/([A-Z])/g, " $1").trim()}`}
+                      className="w-full text-lg px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-gray-50 dark:bg-neutral-700 text-gray-900 dark:text-white"
+                    />
+                  ) : (
+                    <input
+                      type={getInputType(key)}
+                      name={key}
+                      value={formData[key] || ""}
+                      onChange={handleChange}
+                      placeholder={`Enter ${key.replace(/([A-Z])/g, " $1").trim()}`}
+                      className="w-full text-lg px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-gray-50 dark:bg-neutral-700 text-gray-900 dark:text-white"
+                    />
+                  )}
                   {errors[key] && <p className="text-red-500 text-sm mt-1">{errors[key]}</p>}
                 </div>
               ))}
-
 
             <button type="submit" className="col-span-1 md:col-span-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xl py-3 px-6 rounded-lg shadow-md transition">
               Save

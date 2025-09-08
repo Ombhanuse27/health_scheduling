@@ -202,7 +202,7 @@ const Skeleton = ({ selectedLink, isEditMode }) => {
       case "/patientsidebar/info":
         return <DoctorInfo />;
         case "/logout":
-          window.location.href = "http://localhost:3000/"; // ✅ Correct usage
+          window.location.href = "https://health-scheduling.vercel.app/"; // ✅ Correct usage
           break;
         
       default:

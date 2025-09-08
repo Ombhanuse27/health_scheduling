@@ -15,7 +15,11 @@ const AdminSchema = new mongoose.Schema({
   emergencyContact: { type: String },
   email: { type: String},
   address: { type: String },
-  paymentMode: { type: String}
+  paymentMode: { type: String},
+  aboutHospital: { type: String },
+  numberOfBeds: { type: Number },
+  accreditations: { type: String },
+  website: { type: String },
 });
 
 module.exports = mongoose.model("adminModel", AdminSchema);

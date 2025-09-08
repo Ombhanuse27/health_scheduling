@@ -87,16 +87,22 @@ router.get("/getHospitals", async (req, res) => {
   }
 });
 
+// In your backend router file (The corrected version)
 router.get("/me", authMiddleware, async (req, res) => {
   try {
-    const admin = await Admin.findById(req.user.id).select("username");
-    if (!admin) return res.status(404).json({ message: "Admin not found" });
-    res.json(admin);
+    // ✅ THIS IS THE FIX: Remove .select("username") to get all fields
+    // .select("-password") is a good practice to explicitly exclude the password hash
+    const admin = await Admin.findById(req.user.id).select("-password");
+
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+    res.json(admin); // This now sends the full hospital object
   } catch (err) {
+    console.error(err); // Good practice to log the actual error
     res.status(500).json({ message: "Server error" });
   }
 });
-
 router.post('/assignDoctors', async (req, res) => {
   const { recordId, doctorId } = req.body;
 
