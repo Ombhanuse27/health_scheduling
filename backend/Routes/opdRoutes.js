@@ -77,11 +77,17 @@ router.post("/opd/:hospitalId", async (req, res) => {
 
     // --- Time and Slot Calculation (Performed BEFORE database writes) ---
     const { start, end, startStr, endStr } = parseSlotTime(preferredSlot);
-    const today = new Date();
+
+    // ✅ FIX: Create a date object specifically for the "Asia/Kolkata" timezone.
+    const now = new Date();
+    const today = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+    
+    // This date is now correctly based on Indian Standard Time
     const localDate = today.toLocaleDateString("en-CA"); // YYYY-MM-DD format
 
-    // ✅ NEW: Get current time in minutes from midnight for comparison.
+    // This calculation will now use the correct local time in minutes
     const currentTimeInMinutes = today.getHours() * 60 + today.getMinutes();
+    console.log(`Current time in minutes (IST): ${currentTimeInMinutes}`);
 
     // Find existing appointments to determine the next sequential slot.
     const existingAppointments = await opdModel
@@ -90,11 +96,9 @@ router.post("/opd/:hospitalId", async (req, res) => {
         appointmentDate: localDate,
         preferredSlot: `${startStr} - ${endStr}`,
       })
-      .sort({ appointmentTime: 1 }); // Sorting is still useful but our logic is more robust
+      .sort({ appointmentTime: 1 });
 
     // --- Determine the next available time ---
-
-    // Possibility 1: The next slot in the sequence.
     let nextSequentialTime = start; // Default to the start of the slot.
     if (existingAppointments.length > 0) {
       const lastAppointment = existingAppointments[existingAppointments.length - 1];
@@ -105,26 +109,21 @@ router.post("/opd/:hospitalId", async (req, res) => {
       }
     }
 
-    // ✅ NEW: Possibility 2: The earliest time from now (current time + 20 min buffer).
     const earliestTimeFromNow = currentTimeInMinutes + 20;
-
+    
     // The final appointment time is the LATER of the two possibilities.
     let appointmentTimeInMinutes = Math.max(nextSequentialTime, earliestTimeFromNow);
 
-    // ✅ NEW: Also ensure the appointment doesn't start before the slot officially begins.
-    // This handles cases where someone books at 8:00 AM for a 9:00 AM slot.
+    // Also ensure the appointment doesn't start before the slot officially begins.
     appointmentTimeInMinutes = Math.max(appointmentTimeInMinutes, start);
 
     // --- Final Check and Database Write ---
-
-    // Check if the calculated time is still within the slot's range.
     if (appointmentTimeInMinutes >= end) {
       return res.status(400).json({
         message: `Sorry, no available slots in the ${preferredSlot} timeframe. Please try a later slot.`,
       });
     }
 
-    // ✅ REFACTORED: Now that we have a valid time, create and save the record in one atomic operation.
     const appointmentTimeStr = formatTime(appointmentTimeInMinutes);
 
     // Get the next appointment number
@@ -135,7 +134,7 @@ router.post("/opd/:hospitalId", async (req, res) => {
     );
 
     const newOpdEntry = new opdModel({
-      ...req.body, // Includes fullName, contactNumber, email, etc.
+      ...req.body,
       hospitalId: new mongoose.Types.ObjectId(hospitalId),
       appointmentNumber: counter.seq,
       appointmentDate: localDate,
@@ -145,7 +144,6 @@ router.post("/opd/:hospitalId", async (req, res) => {
 
     await newOpdEntry.save();
 
-    // Update the Admin model with the new OPD form reference.
     await Admin.findByIdAndUpdate(
       hospitalId,
       { $push: { opdForms: newOpdEntry._id } },
