@@ -20,6 +20,12 @@ export const submitOpdForm = async (hospitalId, data) => {
 };
 
 
+export const generateTeleconsultLink = async (appointmentId) =>
+  axios.get(`${BASE_URL}/generate-link/${appointmentId}`);
+
+// ✅ Send Teleconsultation Email
+export const sendTeleconsultEmail = async (data) =>
+  axios.post(`${BASE_URL}/send-teleconsult`, data);
 
 
 export const registerDoctor = async (data) => {

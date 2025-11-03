@@ -8,6 +8,8 @@ import {
 } from "../../api/api";
 import { jsPDF } from "jspdf";
 
+import { generateTeleconsultLink, sendTeleconsultEmail } from "../../api/api";
+
 const DoctorDashboard = ({ children }) => {
   const [opdRecords, setOpdRecords] = useState([]);
   const [loggedInDoctor, setLoggedInDoctor] = useState(null);
@@ -396,7 +398,40 @@ const DoctorDashboard = ({ children }) => {
                             >
                               ➕ Add Prescription
                             </button>
+                            
+
                           )}
+
+<button
+  onClick={async () => {
+    const confirmStart = window.confirm(
+      `Are you sure you want to start a teleconsultation with ${record.fullName}?`
+    );
+    if (!confirmStart) return;
+
+    try {
+      const { data } = await generateTeleconsultLink(record._id);
+      const meetLink = data.meetLink;
+
+      await sendTeleconsultEmail({
+        email: record.email,
+        patientName: record.fullName,
+        meetLink,
+      });
+
+      alert(`Teleconsultation link sent to ${record.fullName}!`);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to send teleconsultation link.");
+    }
+  }}
+  className="px-3 py-1 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700 transition"
+>
+  💻 Start Teleconsult
+</button>
+
+
+
                         </div>
                       </td>
                     </tr>

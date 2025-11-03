@@ -16,6 +16,7 @@ import DoctorInfo from "./components/Doctorsidebar/DoctorInfo";
 import PatientSidebar from "./_components/PatientSidebar";
 import DoctorSearchTable from "./components/DoctorSearchTable";
 import AdminDashboard from "./components/HospitalAdmin/AdminDashboard";
+import TeleConsultPage from "./components/TeleConsultPage";
 
 
 function App() {
@@ -36,7 +37,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/DoctorSearchTable" element={<DoctorSearchTable />} />
-
+           <Route path="/teleconsult/:roomId" element={<TeleConsultPage />} />
           <Route 
             path="/dashboard" 
             element={
