@@ -20,6 +20,22 @@ const TeleConsultPage = () => {
       port: isLocal ? 5000 : 443,
       path: "/peerjs",
       secure: !isLocal,
+      config: {
+        iceServers: [
+          // ✅ Public Google STUN servers
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:stun1.l.google.com:19302" },
+          { urls: "stun:stun2.l.google.com:19302" },
+          { urls: "stun:stun3.l.google.com:19302" },
+          { urls: "stun:stun4.l.google.com:19302" },
+          // ✅ Free TURN server (fallback relay)
+          {
+            urls: "turn:relay1.expressturn.com:3478",
+            username: "efree",
+            credential: "efree",
+          },
+        ],
+      },
     });
 
     peerRef.current = peer;
@@ -30,12 +46,13 @@ const TeleConsultPage = () => {
         audio: true,
       });
 
+      // Show own video
       if (myVideo.current) {
         myVideo.current.srcObject = stream;
-        myVideo.current.play().catch(() => {});
+        await myVideo.current.play().catch(() => {});
       }
 
-      // 🔹 Handle incoming calls
+      // 🔹 Handle incoming call
       peer.on("call", (call) => {
         console.log("📞 Incoming call...");
         call.answer(stream);
@@ -48,16 +65,19 @@ const TeleConsultPage = () => {
             await remoteVideo.current.play().catch(() => {});
           }
         });
+
+        call.on("close", () => console.log("❌ Call closed"));
+        call.on("error", (err) => console.error("⚠️ Call error:", err));
       });
 
-      // 🔹 Peer ready
+      // 🔹 Peer connection open
       peer.on("open", async (id) => {
         console.log("✅ Peer connected with ID:", id);
         setPeerId(id);
 
-        // If visiting a room link, connect to that peer
+        // If joining someone else's room
         if (roomId && roomId !== id) {
-          console.log("📡 Connecting to room:", roomId);
+          console.log("📡 Connecting to remote peer:", roomId);
           const call = peer.call(roomId, stream);
           callRef.current = call;
 
@@ -68,11 +88,18 @@ const TeleConsultPage = () => {
               await remoteVideo.current.play().catch(() => {});
             }
           });
+
+          call.on("close", () => console.log("❌ Remote call closed"));
+          call.on("error", (err) => console.error("⚠️ Remote call error:", err));
         } else {
-          // First user creates the room link
           console.log(`🔗 Share this link: ${window.location.origin}/teleconsult/${id}`);
         }
       });
+
+      // 🔹 Debug connection states
+      peer.on("disconnected", () => console.warn("⚠️ Peer disconnected"));
+      peer.on("error", (err) => console.error("🚨 Peer error:", err));
+
     } catch (err) {
       console.error("❌ Camera/Mic access error:", err);
       alert("Please allow camera and microphone permissions to continue.");
@@ -97,7 +124,9 @@ const TeleConsultPage = () => {
     callRef.current = null;
   };
 
-  useEffect(() => () => endCall(), []);
+  useEffect(() => {
+    return () => endCall();
+  }, []);
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-100 relative">
