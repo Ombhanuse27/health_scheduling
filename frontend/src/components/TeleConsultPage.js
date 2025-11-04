@@ -9,9 +9,8 @@ const TeleConsultPage = () => {
   const peerRef = useRef(null);
   const callRef = useRef(null);
   const [isStarted, setIsStarted] = useState(false);
-  const [isInCall, setIsInCall] = useState(false);
+  const [peerId, setPeerId] = useState("");
 
-  // 🚀 Start teleconsultation
   const startTeleConsult = async () => {
     setIsStarted(true);
 
@@ -33,42 +32,45 @@ const TeleConsultPage = () => {
 
       if (myVideo.current) {
         myVideo.current.srcObject = stream;
-        await myVideo.current.play().catch(() => {});
+        myVideo.current.play().catch(() => {});
       }
 
-      // Listen for incoming call
+      // 🔹 Handle incoming calls
       peer.on("call", (call) => {
         console.log("📞 Incoming call...");
         call.answer(stream);
-        setIsInCall(true);
+        callRef.current = call;
 
         call.on("stream", async (remoteStream) => {
+          console.log("👀 Receiving remote stream...");
           if (remoteVideo.current) {
             remoteVideo.current.srcObject = remoteStream;
             await remoteVideo.current.play().catch(() => {});
           }
         });
-
-        callRef.current = call;
       });
 
-      // When peer connects
-      peer.on("open", (id) => {
+      // 🔹 Peer ready
+      peer.on("open", async (id) => {
         console.log("✅ Peer connected with ID:", id);
+        setPeerId(id);
 
-        // Try connecting to existing peer (room)
+        // If visiting a room link, connect to that peer
         if (roomId && roomId !== id) {
           console.log("📡 Connecting to room:", roomId);
           const call = peer.call(roomId, stream);
-          setIsInCall(true);
+          callRef.current = call;
 
           call.on("stream", async (remoteStream) => {
+            console.log("👀 Connected to remote stream!");
             if (remoteVideo.current) {
               remoteVideo.current.srcObject = remoteStream;
               await remoteVideo.current.play().catch(() => {});
             }
           });
-          callRef.current = call;
+        } else {
+          // First user creates the room link
+          console.log(`🔗 Share this link: ${window.location.origin}/teleconsult/${id}`);
         }
       });
     } catch (err) {
@@ -78,33 +80,24 @@ const TeleConsultPage = () => {
     }
   };
 
-  // 🔴 End call and cleanup
   const endCall = () => {
     console.log("📴 Ending call...");
     if (callRef.current) callRef.current.close();
     if (peerRef.current) peerRef.current.destroy();
 
-    if (myVideo.current?.srcObject) {
-      myVideo.current.srcObject.getTracks().forEach((t) => t.stop());
-      myVideo.current.srcObject = null;
-    }
-    if (remoteVideo.current?.srcObject) {
-      remoteVideo.current.srcObject.getTracks().forEach((t) => t.stop());
-      remoteVideo.current.srcObject = null;
-    }
+    [myVideo, remoteVideo].forEach((video) => {
+      if (video.current?.srcObject) {
+        video.current.srcObject.getTracks().forEach((t) => t.stop());
+        video.current.srcObject = null;
+      }
+    });
 
-    setIsInCall(false);
     setIsStarted(false);
     peerRef.current = null;
     callRef.current = null;
   };
 
-  // 🧹 Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      endCall();
-    };
-  }, []);
+  useEffect(() => () => endCall(), []);
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-100 relative">
@@ -112,7 +105,6 @@ const TeleConsultPage = () => {
         🩺 Teleconsultation Room
       </h1>
 
-      {/* Overlay before start */}
       {!isStarted && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 bg-opacity-80 z-20">
           <button
@@ -124,6 +116,11 @@ const TeleConsultPage = () => {
           <p className="text-white mt-2 text-sm opacity-80">
             Click to enable camera and microphone
           </p>
+          {peerId && (
+            <p className="text-green-400 mt-4 break-all text-xs">
+              🔗 Share this link: {window.location.origin}/teleconsult/{peerId}
+            </p>
+          )}
         </div>
       )}
 
@@ -149,8 +146,7 @@ const TeleConsultPage = () => {
         </div>
       </div>
 
-      {/* End Call button */}
-      {isInCall && (
+      {isStarted && (
         <button
           onClick={endCall}
           className="absolute bottom-8 px-6 py-3 bg-red-500 text-white font-semibold rounded-xl shadow-md hover:bg-red-600 transition"

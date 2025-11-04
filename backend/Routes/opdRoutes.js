@@ -171,12 +171,26 @@ router.post("/opd/:hospitalId", async (req, res) => {
 });
 
 router.post("/checkDuplicate", async (req, res) => {
-  const { fullName } = req.body;
+  const { fullName, hospitalId } = req.body;
 
   try {
-    const existingEntry = await opdModel.findOne({ fullName });
+    // ✅ Get today's date in IST
+    const now = new Date();
+    const todayIST = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+    const todayDate = todayIST.toISOString().split("T")[0]; // Format: "YYYY-MM-DD"
+
+    // ✅ Check if same name already booked today in same hospital
+    const existingEntry = await opdModel.findOne({
+      fullName,
+      hospitalId,
+      appointmentDate: todayDate,
+    });
+
     if (existingEntry) {
-      return res.status(200).json({ exists: true, message: "User already exists." });
+      return res.status(200).json({
+        exists: true,
+        message: "This patient already has an appointment today in this hospital.",
+      });
     } else {
       return res.status(200).json({ exists: false });
     }
@@ -185,6 +199,7 @@ router.post("/checkDuplicate", async (req, res) => {
     return res.status(500).json({ error: "Server error while checking duplicates." });
   }
 });
+
 
 
 // Get all OPD records for Admin

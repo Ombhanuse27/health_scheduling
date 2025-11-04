@@ -1,7 +1,7 @@
 import axios from "axios";
 
-//const BASE_URL = "http://localhost:5000/api"; // Use this for local development
-const BASE_URL = "https://health-scheduling.onrender.com/api"; // Use this for local development
+const BASE_URL = "http://localhost:5000/api"; // Use this for local development
+//const BASE_URL = "https://health-scheduling.onrender.com/api"; // Use this for local development
 
 
 
@@ -53,10 +53,10 @@ export const getHospitalsData = async (hospitalId) => {
   }
 }
 
-export const checkDuplicate = async (fullName) => {
+export const checkDuplicate = async (fullName,hospitalId) => {
   try {
     const response = await axios.post(`${BASE_URL}/checkDuplicate`, {
-      fullName,
+      fullName,hospitalId
 
     });
     return response.data;

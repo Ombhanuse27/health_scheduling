@@ -72,7 +72,7 @@ const OpdForm = () => {
 
   const checkIfDuplicateExists = async () => {
     try {
-      const duplicateCheck = await checkDuplicate(formData.fullName);
+      const duplicateCheck = await checkDuplicate(formData.fullName,formData.hospitalId);
       return duplicateCheck.exists;
     } catch (error) {
       console.error("Error checking duplicates:", error);

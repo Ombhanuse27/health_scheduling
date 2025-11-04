@@ -3,14 +3,14 @@ const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const { ExpressPeerServer } = require("peer");
-
+dotenv.config({ path: "../.env" });
 const hospitalRoutes = require("./Routes/hospitalRoutes");
 const adminRoutes = require("./Routes/adminRoutes");
 const opdRoutes = require("./Routes/opdRoutes");
 const doctorRoutes = require("./Routes/doctorRoutes");
 const emailRoutes = require("./Routes/emailRoutes");
 
-dotenv.config({ path: "../.env" });
+
 
 const app = express();
 
