@@ -15,7 +15,7 @@ const Hero = () => {
         <div className="hero-content space-y-4 md:space-y-6 text-center lg:text-left">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-blue-900 leading-tight">
           
-            We Provide Appointment Solution
+           Connecting patients and hospitals seamlessly.
           </h1>
           <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-xl mx-auto lg:mx-0">
           Save Your Time And Take Care To Of Your Health

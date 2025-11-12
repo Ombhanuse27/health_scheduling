@@ -1,13 +1,89 @@
-
 import { useEffect, useState, useRef } from "react";
-import { submitOpdForm, getHospitals,checkDuplicate  } from "../api/api"; 
+import { submitOpdForm, getHospitals, checkDuplicate,getDoctorsData } from "../api/api";
+import React from "react";
+
 
 import NavbarLink from "./Navbar/NavbarLink";
-import lottie from 'lottie-web';
+import lottie from "lottie-web";
 import Footer from "./Footer/Footer";
+
+
+
+
+// --- Helper Functions ---
+
+/**
+ * Parses a time string (e.g., "9:30 AM" or "8:00 PM") into minutes since midnight.
+ * @param {string} timeStr The time string to parse.
+ * @returns {number} Total minutes from midnight.
+ */
+const parseTime = (timeStr) => {
+  if (!timeStr) return 0;
+  const [time, period] = timeStr.split(" ");
+  const [hourStr, minuteStr] = time.split(":");
+  let hour = parseInt(hourStr);
+  let minute = parseInt(minuteStr);
+
+  if (period === "PM" && hour !== 12) {
+    hour += 12;
+  }
+  if (period === "AM" && hour === 12) {
+    hour = 0; // Midnight
+  }
+  return hour * 60 + minute;
+};
+
+/**
+ * Formats total minutes since midnight into a 12-hour time string (e.g., "9:30 AM").
+ * @param {number} totalMinutes The total minutes from midnight.
+ * @returns {string} A formatted time string.
+ */
+const formatTime = (totalMinutes) => {
+  let hour = Math.floor(totalMinutes / 60);
+  let minute = totalMinutes % 60;
+  const period = hour >= 12 ? "PM" : "AM";
+
+  if (hour === 0) {
+    hour = 12; // 12 AM (Midnight)
+  } else if (hour > 12) {
+    hour -= 12; // Convert to 12-hour format
+  }
+
+  const minuteStr = minute.toString().padStart(2, '0');
+  return `${hour}:${minuteStr} ${period}`;
+};
+
+/**
+ * Generates 3-hour time slots between a start and end time.
+ * @param {string} startTimeStr The hospital's start time (e.g., "9:30 AM").
+ * @param {string} endTimeStr The hospital's end time (e.g., "8:00 PM").
+ * @returns {string[]} An array of formatted time slots.
+ */
+const generateTimeSlots = (startTimeStr, endTimeStr) => {
+  const startMinutes = parseTime(startTimeStr);
+  const endMinutes = parseTime(endTimeStr);
+  const slotDuration = 3 * 60; // 3 hours in minutes
+  const slots = [];
+
+  for (let currentStart = startMinutes; currentStart < endMinutes; currentStart += slotDuration) {
+    const currentEnd = currentStart + slotDuration;
+    // Ensure the slot's end time does not exceed the hospital's closing time
+    const slotEnd = Math.min(currentEnd, endMinutes);
+
+    // Only add the slot if it's valid (end is after start)
+    if (slotEnd > currentStart) {
+      slots.push(`${formatTime(currentStart)} - ${formatTime(slotEnd)}`);
+    }
+  }
+  return slots;
+};
+
+// --- Component ---
 
 const OpdForm = () => {
   const container = useRef(null);
+
+  const [doctors, setDoctors] = useState([]);
 
   useEffect(() => {
     const animationInstance = lottie.loadAnimation({
@@ -33,12 +109,12 @@ const OpdForm = () => {
     symptoms: "",
     hospitalId: "",
     hospitalName: "",
-    preferredSlot: "" // New field for preferred slot
+    selectedDoctor: "", // Field for selected doctor
+    preferredSlot: "", // Field for preferred slot
   });
 
   const [hospitals, setHospitals] = useState([]);
-  const HOSPITAL_OPEN = 1 * 60;
-  const HOSPITAL_CLOSE = 24 * 60;
+  const [timeSlots, setTimeSlots] = useState([]); // State for dynamic time slots
 
   useEffect(() => {
     const fetchHospitals = async () => {
@@ -56,196 +132,317 @@ const OpdForm = () => {
     fetchHospitals();
   }, []);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name === "hospitalId") {
-      const selectedHospital = hospitals.find(hospital => hospital._id === value);
-      setFormData({
-        ...formData,
-        hospitalId: value,
-        hospitalName: selectedHospital ? selectedHospital.username : "",
-      });
-    } else {
-      setFormData({ ...formData, [name]: value });
+ const handleChange = async (e) => {
+  const { name, value } = e.target;
+
+  if (name === "hospitalId") {
+    const selectedHospital = hospitals.find((hospital) => hospital._id === value);
+
+    if (selectedHospital) {
+  console.log("Selected Hospital:", selectedHospital);
+
+  const newTimeSlots = generateTimeSlots(
+    selectedHospital.hospitalStartTime,
+    selectedHospital.hospitalEndTime
+  );
+
+  setTimeSlots(newTimeSlots);
+
+  try {
+    const allDoctors = await getDoctorsData();
+    const hospitalDoctors = allDoctors.filter(
+      (doc) => doc.hospitalId === selectedHospital._id
+    );
+
+    console.log("Filtered Doctors:", hospitalDoctors);
+    setDoctors(hospitalDoctors);
+  } catch (err) {
+    console.error("Error fetching doctors:", err);
+    setDoctors([]);
+  }
+
+  console.log(formData);
+
+  // ✅ RESET doctor selection every time a new hospital is chosen
+  setFormData((prev) => ({
+    ...prev,
+    hospitalId: value,
+    hospitalName: selectedHospital.username,
+    preferredSlot: "",
+    selectedDoctor: "", // ensure it's blank
+  }));
+
+  // ✅ (Optional) Clear console log until doctor is manually selected
+  console.log("Form data after hospital selection reset:", {
+    ...formData,
+    hospitalId: value,
+    hospitalName: selectedHospital.username,
+    selectedDoctor: "", // explicitly blank
+  });
+}
+ else {
+      // Clear data when hospital deselected
+      setTimeSlots([]);
+      setDoctors([]);
+      setFormData((prev) => ({
+        ...prev,
+        hospitalId: "",
+        hospitalName: "",
+        preferredSlot: "",
+        selectedDoctor: "",
+      }));
+
+
+      
     }
-  };
+  }
+   else if (name === "selectedDoctor") {
+    setFormData((prev) => ({
+      ...prev,
+      selectedDoctor: value, // store selected doctor id
+    }));
+    console.log("Selected Doctor:", value);
+    
+  }  
+  else {
+    // Normal field updates
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  }
+};
 
   const checkIfDuplicateExists = async () => {
     try {
-      const duplicateCheck = await checkDuplicate(formData.fullName,formData.hospitalId);
+      const duplicateCheck = await checkDuplicate(
+        formData.fullName,
+        formData.hospitalId
+      );
       return duplicateCheck.exists;
     } catch (error) {
       console.error("Error checking duplicates:", error);
       return false;
     }
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const confirmBooking = window.confirm("Do you want to book an appointment?");
     if (!confirmBooking) return;
 
-
-  
     // Check for duplicate before proceeding
     const isDuplicate = await checkIfDuplicateExists();
     if (isDuplicate) {
       alert("This Full Name already exist. Please use different name.");
       return;
     }
-  
+
+    // --- Dynamic Time Validation ---
+    const selectedHospital = hospitals.find(
+      (h) => h._id === formData.hospitalId
+    );
+    if (!selectedHospital) {
+      alert("Invalid hospital selected.");
+      return;
+    }
+
+    // Get hospital open/close times in minutes
+    const hospitalOpenMinutes = parseTime(selectedHospital.hospitalStartTime);
+    const hospitalCloseMinutes = parseTime(selectedHospital.hospitalEndTime);
 
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    if (currentMinutes < HOSPITAL_OPEN) {
-      alert("Appointments start at 9:00 AM.");
+
+    // Check if hospital is open
+    if (currentMinutes < hospitalOpenMinutes) {
+      alert(`Appointments start at ${selectedHospital.hospitalStartTime}.`);
       return;
-    } else if (currentMinutes > HOSPITAL_CLOSE) {
+    } else if (currentMinutes > hospitalCloseMinutes) {
       alert("Appointments are closed for today.");
       return;
     }
 
+    // Check if selected slot has passed
     const slot = formData.preferredSlot;
     if (slot) {
-      const slotEndTime = slot.split(" - ")[1]; // e.g., "12:00 PM"
-      const [endHour, endMinutePart] = slotEndTime.split(":");
-      const [minuteStr, period] = endMinutePart.split(" ");
-      let hour = parseInt(endHour);
-      let minute = parseInt(minuteStr);
-
-      if (period === "PM" && hour !== 12) hour += 12;
-      if (period === "AM" && hour === 12) hour = 0;
-
-      const slotEndMinutes = hour * 60 + minute;
+      // Get the end time of the slot (e.g., "12:00 PM")
+      const slotEndTimeStr = slot.split(" - ")[1];
+      // Parse it to minutes
+      const slotEndMinutes = parseTime(slotEndTimeStr);
 
       if (currentMinutes > slotEndMinutes) {
-        alert("The selected time slot has already passed. Please choose a valid slot.");
+        alert(
+          "The selected time slot has already passed. Please choose a valid slot."
+        );
         return;
       }
     }
-
-
+    // --- End Dynamic Time Validation ---
 
     try {
-  const response = await submitOpdForm(formData.hospitalId, formData);
-
-  alert(response.message || "OPD Form submitted successfully");
-} catch (error) {
-  alert(error?.response?.data?.message || "Error submitting OPD Form");
-  console.error("Submit error:", error);
-}
-
+      const response = await submitOpdForm(formData.hospitalId, formData);
+      alert(response.message || "OPD Form submitted successfully");
+    } catch (error) {
+      alert(error?.response?.data?.message || "Error submitting OPD Form");
+      console.error("Submit error:", error);
+    }
   };
 
-
-  // Generate time slots from 9 AM to 10 PM (3-hour slots)
-  const timeSlots = Array.from({ length: 5 }, (_, i) => {
-    let startHour = 9 + i * 3;
-    let endHour = startHour + 3;
-    let startPeriod = startHour >= 12 ? "PM" : "AM";
-    let endPeriod = endHour >= 12 ? "PM" : "AM";
-    
-    return `${startHour > 12 ? startHour - 12 : startHour}:00 ${startPeriod} - ${endHour > 12 ? endHour - 12 : endHour}:00 ${endPeriod}`;
-  });
-
   return (
-  <div className="w-full bg-gradient-to-b from-blue-100 to-blue-200 min-h-screen">
-    <NavbarLink />
-    <div className="appointment bg-blue-100 rounded-[30px] p-[80px_40px_40px_40px] mx-[20px] relative overflow-hidden mt-36 shadow-lg">
+    <div className="w-full bg-gradient-to-b from-blue-100 to-blue-200 min-h-screen">
+      <NavbarLink />
+      <div className="appointment bg-blue-100 rounded-[30px] p-[80px_40px_40px_40px] mx-[20px] relative overflow-hidden mt-36 shadow-lg">
+        <div className="container mx-auto">
+          <div className="flex flex-wrap bg-white rounded-3xl shadow-xl my-[30px] overflow-hidden">
+            <div className="w-full lg:w-6/12 p-8">
+              <div className="max-w-2xl mx-auto">
+                <h2 className="text-3xl font-bold text-center text-blue-700 mb-10">
+                  🩺 Appointment Form
+                </h2>
 
-      <div className="container mx-auto">
-        <div className="flex flex-wrap bg-white rounded-3xl shadow-xl my-[30px] overflow-hidden">
-          <div className="w-full lg:w-6/12 p-8">
-            <div className="max-w-2xl mx-auto">
-              <h2 className="text-3xl font-bold text-center text-blue-700 mb-10">
-                🩺 Appointment Form
-              </h2>
-
-              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex flex-col">
-                  <label htmlFor="hospitalId" className="block text-sm font-medium text-gray-700 mb-2">
-                    Select Hospital (Admin Username)
-                  </label>
-                  <select
-                    id="hospitalId"
-                    name="hospitalId"
-                    value={formData.hospitalId}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    required
-                  >
-                    <option value="">Select a hospital</option>
-                    {hospitals.map(hospital => (
-                      <option key={hospital._id} value={hospital._id}>
-                        {hospital.username}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex flex-col">
-                  <label htmlFor="preferredSlot" className="block text-sm font-medium text-gray-700 mb-2">
-                    Which slot do you prefer?
-                  </label>
-                  <select
-                    id="preferredSlot"
-                    name="preferredSlot"
-                    value={formData.preferredSlot}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    required
-                  >
-                    <option value="">Select a time slot</option>
-                    {timeSlots.map((slot, index) => (
-                      <option key={index} value={slot}>
-                        {slot}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {Object.keys(formData).map((key) =>
-                  key !== "hospitalId" && key !== "hospitalName" && key !== "preferredSlot" && (
-                    <div key={key} className="flex flex-col">
-                      <label htmlFor={key} className="block text-sm font-medium text-gray-700 mb-2 capitalize">
-                        {key.replace(/([A-Z])/g, " $1").trim()}
-                      </label>
-                      <input
-                        type={key === "email" ? "email" : key === "age" ? "number" : "text"}
-                        id={key}
-                        name={key}
-                        value={formData[key]}
-                        onChange={handleChange}
-                        placeholder={`Enter ${key.replace(/([A-Z])/g, " $1").trim()}`}
-className="border border-solid border-gray-400 border-[2px] w-full px-4 py-3  rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none"
-
-                        required
-                      />
-                    </div>
-                  )
-                )}
-
-                <button
-                  type="submit"
-                  className="col-span-1 md:col-span-2 bg-blue-600 hover:bg-blue-700 transition duration-200 text-white font-semibold py-3 px-6 rounded-lg shadow-md mt-2"
+                <form
+                  onSubmit={handleSubmit}
+                  className="grid grid-cols-1 md:grid-cols-2 gap-6"
                 >
-                  Submit
-                </button>
-              </form>
-            </div>
-          </div>
+                  <div className="flex flex-col">
+                    <label
+                      htmlFor="hospitalId"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Select Hospital (Admin Username)
+                    </label>
+                    <select
+                      id="hospitalId"
+                      name="hospitalId"
+                      value={formData.hospitalId}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      required
+                    >
+                      <option value="">Select a hospital</option>
+                      {hospitals.map((hospital) => (
+                        <option key={hospital._id} value={hospital._id}>
+                          {hospital.username}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-          <div className="w-full lg:w-6/12 bg-blue-50 flex items-center justify-center p-8">
-            <div className="img max-w-md w-full" ref={container}></div>
+                  <div className="flex flex-col">
+                    <label
+                      htmlFor="preferredSlot"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Which slot do you prefer?
+                    </label>
+                    <select
+                      id="preferredSlot"
+                      name="preferredSlot"
+                      value={formData.preferredSlot}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      required
+                      disabled={!formData.hospitalId} // Disable if no hospital is selected
+                    >
+                      <option value="">
+                        {formData.hospitalId
+                          ? "Select a time slot"
+                          : "Please select a hospital first"}
+                      </option>
+                      {timeSlots.map((slot, index) => (
+                        <option key={index} value={slot}>
+                          {slot}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col">
+
+  <label
+    htmlFor="selectedDoctor"
+    className="block text-sm font-medium text-gray-700 mb-2"
+  >
+    Choose Doctor (Optional)
+  </label>
+  <select
+    id="selectedDoctor"
+    name="selectedDoctor"
+    value={formData.selectedDoctor || ""}
+    onChange={handleChange}
+    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+    disabled={!formData.hospitalId}
+  >
+    <option value="">
+      {doctors.length > 0
+        ? "Select a doctor"
+        : "No doctors available for this hospital"}
+    </option>
+    {doctors.map((doctor) => (
+      <option key={doctor._id} value={doctor._id}>
+        {doctor.fullName}
+      </option>
+    ))}
+  </select>
+</div>
+
+
+                  {Object.keys(formData).map(
+                    (key) =>
+                      key !== "hospitalId" &&
+                      key !== "hospitalName" &&
+                      key !== "preferredSlot" &&
+                      key !== "selectedDoctor" && (
+                        <div key={key} className="flex flex-col">
+                          <label
+                            htmlFor={key}
+                            className="block text-sm font-medium text-gray-700 mb-2 capitalize"
+                          >
+                            {key.replace(/([A-Z])/g, " $1").trim()}
+                          </label>
+                          <input
+                            type={
+                              key === "email"
+                                ? "email"
+                                : key === "age"
+                                ? "number"
+                                : "text"
+                            }
+                            id={key}
+                            name={key}
+                            value={formData[key]}
+                            onChange={handleChange}
+                            placeholder={`Enter ${key
+                              .replace(/([A-Z])/g, " $1")
+                              .trim()}`}
+                            className="border border-solid border-gray-400 border-[2px] w-full px-4 py-3  rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none"
+                            required
+                          />
+                        </div>
+                      )
+                  )}
+
+                  <button
+                    type="submit"
+                    className="col-span-1 md:col-span-2 bg-blue-600 hover:bg-blue-700 transition duration-200 text-white font-semibold py-3 px-6 rounded-lg shadow-md mt-2"
+                  >
+                    Submit
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            <div className="w-full lg:w-6/12 bg-blue-50 flex items-center justify-center p-8">
+              <div className="img max-w-md w-full" ref={container}></div>
+            </div>
           </div>
         </div>
       </div>
+      <Footer />
     </div>
-    <Footer />
-  </div>
-);
-
+  );
 };
 
 export default OpdForm;

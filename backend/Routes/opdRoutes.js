@@ -65,7 +65,7 @@ router.post("/opd/:hospitalId", async (req, res) => {
 
   try {
     const { hospitalId } = req.params;
-    const { fullName, contactNumber, email, preferredSlot } = req.body;
+    const { fullName, contactNumber, email, preferredSlot,selectedDoctor } = req.body;
 
     // --- Validation ---
     if (!mongoose.Types.ObjectId.isValid(hospitalId)) {
@@ -138,8 +138,10 @@ router.post("/opd/:hospitalId", async (req, res) => {
       hospitalId: new mongoose.Types.ObjectId(hospitalId),
       appointmentNumber: counter.seq,
       appointmentDate: localDate,
+      assignedDoctor: selectedDoctor || null, 
       appointmentTime: appointmentTimeStr,
       preferredSlot: `${startStr} - ${endStr}`,
+      assignedDoctor:selectedDoctor || null,
     });
 
     await newOpdEntry.save();
@@ -233,6 +235,24 @@ router.get("/doctor/opd", authMiddleware, async (req, res) => {
   } catch (error) {
     console.error("Error in /doctor/opd:", error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+
+// Delete OPD Record by ID
+router.delete("/opd/:id",authMiddleware,async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedRecord = await opdModel.findByIdAndDelete(id);
+
+    if (!deletedRecord) {
+      return res.status(404).json({ message: "OPD record not found" });
+    }
+
+    res.status(200).json({ message: "OPD record deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting OPD record:", error.message);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 

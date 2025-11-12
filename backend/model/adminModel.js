@@ -20,6 +20,7 @@ const AdminSchema = new mongoose.Schema({
   numberOfBeds: { type: Number },
   accreditations: { type: String },
   website: { type: String },
+  city: { type: String }, 
 });
 
 module.exports = mongoose.model("adminModel", AdminSchema);

@@ -17,6 +17,7 @@
     "jspdf": "^3.0.1",
     "jwt-decode": "^4.0.0",
     "lottie-web": "^5.12.2",
+    "lucide-react": "^0.553.0",
     "motion": "^12.5.0",
     "navigate": "^0.3.6",
     "peer": "^1.0.2",

@@ -17,6 +17,7 @@ const HospitalInfo = () => {
     emergencyContact: "",
     email: "",
     address: "",
+    city: "",
     aboutHospital: "",
     numberOfBeds: "",
     accreditations: "",

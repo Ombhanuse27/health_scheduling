@@ -62,3 +62,148 @@ input::placeholder {
     flex-wrap: wrap;
     justify-content: center;
 }
+
+/* Styles for the new city filter dropdown */
+.city-filter {
+  margin-left: 20px; /* Add some space next to the search bar */
+}
+
+.city-dropdown {
+  padding: 10px 15px;
+  font-size: 16px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background-color: white;
+  cursor: pointer;
+  min-width: 200px; /* Give it some width */
+}
+
+.city-dropdown:focus {
+  outline: none;
+  border-color: #007bff; /* Highlight on focus */
+}
+
+/* Optional: Style for no results message */
+.no-results {
+  width: 100%;
+  text-align: center;
+  font-size: 1.2rem;
+  color: #555;
+  margin-top: 40px;
+}
+
+.hospital-list-container {
+  background: linear-gradient(90deg, #EBF3FF 0%, #E3EEFF 100%);
+  width: 100%;
+  min-height: 90vh; /* Use min-height to fill at least the viewport */
+  
+  /* ADD THIS PADDING: 
+    This pushes all content down from under the main navbar. 
+    Adjust 80px to match your navbar's actual height.
+  */
+  padding-top: 100px; 
+}
+
+.search-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin: 20px 0;
+  /* Make sure it's not hidden */
+  position: relative;
+  z-index: 10;
+}
+.search {
+    display: flex;
+    align-items: center;
+    height: 50px;
+    width: 100%;
+    max-width: 600px; /* Use max-width to be responsive */
+    border-radius: 25px;
+    border: 1px solid #ccc;
+    padding: 5px 10px;
+    background: linear-gradient(135deg, #ffffff, #f0f0f0);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease-in-out;
+}
+
+.search:hover {
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+}
+
+/* Updated input to remove default browser styles */
+.search input {
+    width: 100%;
+    border: none;
+    padding: 10px;
+    border-radius: 20px;
+    outline: none;
+    font-size: 18px;
+    background: transparent;
+    -webkit-appearance: none; /* Fix for iOS */
+    -moz-appearance: none;
+    appearance: none;
+}
+
+input::placeholder {
+    font-size: 16px;
+    color: #888;
+    font-style: italic;
+}
+
+#search-icon {
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
+    transition: transform 0.3s ease-in-out;
+}
+
+#search-icon:hover {
+    transform: scale(1.1);
+    filter: brightness(80%);
+}
+
+.hospital-list{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding-bottom: 40px; /* Add space at the bottom */
+}
+
+/* --- ADJUSTED DROPDOWN STYLES --- */
+
+.city-filter {
+  margin-left: 20px; /* Add some space next to the search bar */
+  margin-top: 10px; /* Add margin for small screens */
+}
+
+.city-dropdown {
+  /* Make it match the search bar */
+  height: 50px;
+  min-width: 200px;
+
+  padding: 10px 15px;
+  font-size: 16px;
+  
+  /* Match the search bar style */
+  border: 1px solid #ccc;
+  border-radius: 25px; /* Match the search bar */
+  background: linear-gradient(135deg, #ffffff, #f0f0f0);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  
+  cursor: pointer;
+}
+
+.city-dropdown:focus {
+  outline: none;
+  border-color: #007bff; /* Highlight on focus */
+}
+
+.no-results {
+  width: 100%;
+  text-align: center;
+  font-size: 1.2rem;
+  color: #555;
+  margin-top: 40px;
+}

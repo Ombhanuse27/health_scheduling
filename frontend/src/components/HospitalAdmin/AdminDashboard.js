@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
+
+import { Trash2 } from "lucide-react";
+
+
 // ✅ Import getLoggedInHospital
-import { getOpdRecords, getDoctorsData, assignDoctors, getLoggedInHospital } from "../../api/api";
+import { getOpdRecords, getDoctorsData, assignDoctors, getLoggedInHospital ,deleteOpdRecord} from "../../api/api";
 
 const AdminDashboard = ({ children }) => {
   const [opdRecords, setOpdRecords] = useState([]);
@@ -113,114 +117,84 @@ const AdminDashboard = ({ children }) => {
 
   return (
     <div className="flex flex-1">
-      <div className="p-2 md:px-20 py-10 border-neutral-200 dark:border-neutral-700 bg-blue-200 flex flex-col gap-2 flex-1 w-full h-full">
+      {/* ✅ Improved base layout and background color */}
+      <div className="p-4 md:p-10 bg-gray-100 dark:bg-gray-900 flex flex-col gap-4 flex-1 w-full min-h-screen">
         {loading ? (
-          // ... (loading skeleton JSX)
-          <p>Loading Dashboard...</p>
+          // ✅ Improved loading state
+          <div className="flex flex-1 justify-center items-center">
+            <div className="animate-spin rounded-full h-20 w-20 border-t-4 border-b-4 border-red-500"></div>
+          </div>
         ) : (
-          <div className="p-6 md:px-20 py-10 flex flex-col gap-4 flex-1 w-full h-full">
-            <h2 className="text-5xl font-extrabold mb-6 text-red-500 text-center uppercase tracking-wide">
+          <div className="w-full max-w-7xl mx-auto">
+            <h2 className="text-3xl md:text-5xl font-extrabold mb-6 text-red-500 text-center uppercase tracking-wide">
               Appointment List
             </h2>
 
-            <input
-              className="h-12 w-80 rounded-lg bg-white text-gray-700 px-4 ml-auto border border-gray-300 focus:outline-none focus:ring-2 focus:ring-pink-500 transition-shadow shadow-md hover:shadow-lg"
-              placeholder="Search records..."
-            />
-            <div className="mb-4">
-              <label className="text-lg text-black font-semibold mr-2">Select Date:</label>
-              <select
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="px-4 py-2 text-lg text-black border rounded bg-gray-400"
-              >
-                <option className="text-black" value="">
-                  All Dates
-                </option>
-                {uniqueDates.map((date) => (
-                  <option key={date} value={date}>
-                    {date}
-                  </option>
-                ))}
-              </select>
+            {/* ✅ Improved controls layout for responsiveness */}
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 px-4 py-3 bg-white dark:bg-gray-800 rounded-lg shadow">
+              <input
+                className="h-12 w-full md:w-80 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-200 text-gray-700 px-4 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-pink-500 transition-shadow"
+                placeholder="Search records..."
+              />
+              <div className="flex items-center gap-2 w-full md:w-auto">
+                <label className="text-lg text-black dark:text-gray-200 font-semibold mr-2 shrink-0">
+                  Select Date:
+                </label>
+                <select
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="px-4 py-2 text-lg text-black dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 w-full md:w-auto"
+                >
+                  <option value="">All Dates</option>
+                  {uniqueDates.map((date) => (
+                    <option key={date} value={date}>
+                      {date}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <table className="w-full border-collapse bg-white rounded-lg overflow-hidden shadow-lg mt-6">
-              <thead>
-                <tr className="bg-gradient-to-r from-gray-200 to-gray-300 text-gray-700 text-lg">
-                  <th className="p-4 text-left">Full Name</th>
-                  <th className="p-4 text-left">Age</th>
-                  <th className="p-4 text-left">Symptoms</th>
-                  <th className="p-4 text-left">Appointment Number</th>
-                  <th className="p-4 text-left">Appointment Date</th>
-                  <th className="p-4 text-left">Appointment Time</th>
-                  <th className="p-4 text-left">Assign Doctor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredRecords.length > 0 ? (
-                  filteredRecords.map((record, index) => {
-                    // ✅ This check now works correctly on page load because of the population step above
-                    const isAssigned = record.assignedDoctor && record.assignedDoctor.fullName;
-
-                    return (
-                      <tr key={index} className="border text-black">
-                        <td className="border p-2">{record.fullName}</td>
-                        <td className="border p-2">{record.age}</td>
-                        <td className="border p-2">{record.symptoms}</td>
-                        <td className="border p-2">{record.appointmentNumber}</td>
-                        <td className="border p-2">{record.appointmentDate}</td>
-                        <td className="border p-2">{record.appointmentTime}</td>
-                        <td className="border p-2">
-                          {isAssigned ? (
-                            // ✅ If assigned, display the updated text
-                            <span className="font-semibold text-green-700">
-                              Assigned to {record.assignedDoctor.fullName}
-                            </span>
-                          ) : (
-                            // ✅ If not assigned, show the controls
-                            <>
-                              <select
-                                className="px-2 py-1 rounded border text-black"
-                                value={record.assignedDoctorId || ""}
-                                onChange={(e) => {
-                                  const selectedDoctorId = e.target.value;
-                                  setOpdRecords((prev) =>
-                                    prev.map((r) =>
-                                      r._id === record._id ? { ...r, assignedDoctorId: selectedDoctorId } : r
-                                    )
-                                  );
-                                }}
-                              >
-                                <option value="" disabled>Select Doctor</option>
-                                {doctors.map((doc) => (
-                                  <option key={doc._id} value={doc._id}>
-                                    {doc.fullName}
-                                  </option>
-                                ))}
-                              </select>
-                              <button
-                                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition ml-2"
-                                onClick={() => assignDoctorsHandler(record)}
-                                disabled={!record.assignedDoctorId}
-                              >
-                                Send
-                              </button>
-                            </>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan="7" className="text-center p-4">
-                      No records found for this date.
-                    </td>
+            {/* ✅ Responsive Table Container */}
+            <div className="w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden mt-6">
+              <table className="w-full border-collapse">
+                {/* ✅ Table head is hidden on mobile */}
+                <thead className="hidden md:table-header-group">
+                  <tr className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-left text-sm uppercase">
+                    <th className="p-4 font-semibold">Full Name</th>
+                    <th className="p-4 font-semibold">Age</th>
+                    <th className="p-4 font-semibold">Symptoms</th>
+                    <th className="p-4 font-semibold">Appt. Number</th>
+                    <th className="p-4 font-semibold">Appt. Date</th>
+                    <th className="p-4 font-semibold">Appt. Time</th>
+                    <th className="p-4 font-semibold">Assign Doctor</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700 md:divide-none">
+                  {filteredRecords.length > 0 ? (
+                    filteredRecords.map((record) => (
+                      <AppointmentRow
+                        key={record._id}
+                        record={record}
+                        doctors={doctors}
+                        assignDoctorsHandler={assignDoctorsHandler}
+                        setOpdRecords={setOpdRecords}
+                      />
+                    ))
+                  ) : (
+                    <tr>
+                      {/* ✅ Adjusted colSpan for the stacking layout */}
+                      <td
+                        colSpan="7"
+                        className="text-center p-8 text-gray-500 dark:text-gray-400"
+                      >
+                        No records found for this date.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
             {children}
           </div>
         )}
@@ -228,5 +202,121 @@ const AdminDashboard = ({ children }) => {
     </div>
   );
 };
+
+// ✅ Extracted Row into its own component for clarity
+const AppointmentRow = ({
+  record,
+  doctors,
+  assignDoctorsHandler,
+  setOpdRecords,
+}) => {
+  const   token = localStorage.getItem("token");
+  const isAssigned = record.assignedDoctor && record.assignedDoctor.fullName;
+
+  const handleDelete = async () => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${record.fullName}'s appointment?`
+    );
+    if (!confirmed) return;
+
+    try {
+      await deleteOpdRecord(record._id, token);
+      alert("Appointment deleted successfully!");
+      setOpdRecords((prev) => prev.filter((r) => r._id !== record._id));
+    } catch (error) {
+      console.error("Error deleting record:", error);
+      alert("Failed to delete the appointment.");
+    }
+  };
+
+  const ResponsiveCell = ({ label, children, className = "" }) => (
+    <td
+      data-label={label}
+      className={`
+        block md:table-cell p-4 md:p-3
+        text-gray-900 dark:text-gray-200 
+        text-right md:text-left
+        relative md:static
+        border-b border-gray-200 dark:border-gray-700 md:border-none
+        before:content-[attr(data-label)]
+        before:absolute before:left-4 before:text-left
+        before:font-semibold before:text-gray-600 dark:before:text-gray-400
+        md:before:content-none
+        ${className}
+      `}
+    >
+      {children}
+    </td>
+  );
+
+  return (
+    <tr className="block md:table-row mb-4 md:mb-0 bg-white dark:bg-gray-800 md:hover:bg-gray-50 dark:md:hover:bg-gray-700/50 shadow-md md:shadow-none rounded-lg md:rounded-none overflow-hidden md:overflow-visible">
+      <ResponsiveCell label="Full Name">{record.fullName}</ResponsiveCell>
+      <ResponsiveCell label="Age">{record.age}</ResponsiveCell>
+      <ResponsiveCell label="Symptoms" className="whitespace-pre-wrap break-words">
+        {record.symptoms}
+      </ResponsiveCell>
+      <ResponsiveCell label="Appt. Number">
+        {record.appointmentNumber}
+      </ResponsiveCell>
+      <ResponsiveCell label="Appt. Date">
+        {record.appointmentDate}
+      </ResponsiveCell>
+      <ResponsiveCell label="Appt. Time">
+        {record.appointmentTime}
+      </ResponsiveCell>
+      <ResponsiveCell label="Assign Doctor">
+        {isAssigned ? (
+          <span className="font-semibold text-green-700 dark:text-green-400">
+            Assigned to {record.assignedDoctor.fullName}
+          </span>
+        ) : (
+          <div className="flex flex-col sm:flex-row gap-2 items-end sm:items-center justify-end md:justify-start">
+            <select
+              className="px-2 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-black dark:bg-gray-700 dark:text-white w-full sm:w-auto"
+              value={record.assignedDoctorId || ""}
+              onChange={(e) => {
+                const selectedDoctorId = e.target.value;
+                setOpdRecords((prev) =>
+                  prev.map((r) =>
+                    r._id === record._id
+                      ? { ...r, assignedDoctorId: selectedDoctorId }
+                      : r
+                  )
+                );
+              }}
+            >
+              <option value="" disabled>
+                Select Doctor
+              </option>
+              {doctors.map((doc) => (
+                <option key={doc._id} value={doc._id}>
+                  {doc.fullName}
+                </option>
+              ))}
+            </select>
+            <button
+              className="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+              onClick={() => assignDoctorsHandler(record)}
+              disabled={!record.assignedDoctorId}
+            >
+              Send
+            </button>
+
+            {/* ✅ Lucide Delete Icon */}
+            <button
+              onClick={handleDelete}
+              className="p-2 bg-red-600 text-white rounded hover:bg-red-700 transition flex items-center justify-center"
+              title="Delete Appointment"
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
+        )}
+      </ResponsiveCell>
+    </tr>
+  );
+};
+
 
 export default AdminDashboard;

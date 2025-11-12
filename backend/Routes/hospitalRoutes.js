@@ -20,40 +20,16 @@ router.get("/getHospitalsData", async (req, res) => {
 router.post("/hospitalData/:hospitalId", async (req, res) => {
   try {
     const { hospitalId } = req.params;
-    
-    // ✅ Destructure only the fields you expect to receive and update
-    const {
-      hospitalImage,
-      hospitalName,
-      hospitalStartTime,
-      hospitalEndTime,
-      Specialist,
-      opdFees,
-      contactNumber,
-      emergencyContact,
-      email,
-      address,
-      paymentMode,
-    } = req.body;
 
-    const updatedData = {
-      hospitalImage,
-      hospitalName,
-      hospitalStartTime,
-      hospitalEndTime,
-      Specialist,
-      opdFees,
-      contactNumber,
-      emergencyContact,
-      email,
-      address,
-      paymentMode,
-    };
+    // The req.body from your form has the exact shape you need.
+    // We can just use it directly. Mongoose will ignore fields
+    // that aren't in the schema (like `hospitalId` which is in the body).
+    const updatedData = req.body;
 
     // Use findByIdAndUpdate for a cleaner, atomic update operation
     const updatedHospital = await Hospital.findByIdAndUpdate(
       hospitalId,
-      updatedData,
+      updatedData, // <-- Pass the entire body as the update
       { new: true, runValidators: true } // {new: true} returns the updated document
     );
 

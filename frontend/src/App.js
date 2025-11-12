@@ -22,8 +22,11 @@ import TeleConsultPage from "./components/TeleConsultPage";
 function App() {
   return (
     <Router>
+      {/* NavbarLink renders here, once for all pages */}
       <NavbarLink />
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      
+      {/* This div provides a default background, but doesn't center the content */}
+      <div className="min-h-screen bg-gray-100">
         <Routes>
      
         <Route path="/" element={<Landingpage />} />

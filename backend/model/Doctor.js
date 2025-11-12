@@ -9,6 +9,12 @@ const doctorSchema = new mongoose.Schema({
   address: { type: String, required: true },
   specialization: { type: String, required: true },
   hospital: { type: String, required: true },
+  hospitalId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: "Hospital", 
+    required: true 
+  },
+
   username: { type: String}, // Ensure no duplicate usernames
   password: { type: String},
   

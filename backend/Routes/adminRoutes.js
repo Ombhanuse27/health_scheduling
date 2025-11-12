@@ -79,7 +79,8 @@ router.post("/login", async (req, res) => {
 
 router.get("/getHospitals", async (req, res) => {
   try {
-    const admins = await Admin.find({}, "username"); // Only fetch username field
+    // Fetch all fields, but exclude the password for security
+const admins = await Admin.find({}).select("-password");// Only fetch username field
     res.json(admins);
   } catch (err) {
     console.error("Error fetching admins:", err);

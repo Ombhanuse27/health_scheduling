@@ -19,6 +19,20 @@ export const submitOpdForm = async (hospitalId, data) => {
   }   
 };
 
+// ✅ Delete OPD Record
+export const deleteOpdRecord = async (recordId, token) => {
+  try {
+    const response = await axios.delete(`${BASE_URL}/opd/${recordId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting OPD record:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+
 
 export const generateTeleconsultLink = async (appointmentId) =>
   axios.get(`${BASE_URL}/generate-link/${appointmentId}`);

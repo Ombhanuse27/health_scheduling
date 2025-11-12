@@ -15,6 +15,12 @@ const opdSchema = new mongoose.Schema({
     ref: 'Doctor',
     default: null
   },
+
+  selectedDoctor: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Doctor",
+    default: null,
+  },
   prescriptionPdf: {
   data: String, // base64 string
   contentType: String, // e.g., "application/pdf"
