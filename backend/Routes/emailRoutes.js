@@ -48,7 +48,7 @@ router.get("/generate-link/:appointmentId", async (req, res) => {
   try {
     const { appointmentId } = req.params;
     const meetingId = uuidv4();
-    const meetLink = `https://health-scheduling.vercel.app/teleconsult/${meetingId}`;
+    const meetLink = `http://localhost:3000/teleconsult/${meetingId}`;
 
     res.json({ appointmentId, meetLink });
   } catch (error) {

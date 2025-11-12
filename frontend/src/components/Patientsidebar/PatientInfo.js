@@ -13,8 +13,8 @@ const PatientInfo = () => {
   });
 
   const [loading, setLoading] = useState(true);
-  const [errors, setErrors] = useState({});
-
+  const [errors] = useState({});
+ 
  
   useEffect(() => {
     setTimeout(() => {
