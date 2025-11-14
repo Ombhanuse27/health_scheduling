@@ -402,14 +402,13 @@ const DoctorDashboard = ({ children }) => {
 
                           )}
 
+
 <button
   onClick={async () => {
     const confirmStart = window.confirm(
       `Are you sure you want to start a teleconsultation with ${record.fullName}?`
     );
     if (!confirmStart) return;
-
-    // ... inside the <button onClick={...}> handler for "Start Teleconsult"
 
     try {
       const { data } = await generateTeleconsultLink(record._id);
@@ -423,9 +422,17 @@ const DoctorDashboard = ({ children }) => {
 
       alert(`Teleconsultation link sent to ${record.fullName}!`);
       
-      // ✅ ADD THIS LINE:
       // This automatically opens the teleconsult room for the doctor.
       window.open(meetLink, '_blank'); 
+
+      // ✅ ADD THIS: Update the state to store the new link against the record
+      setOpdRecords(prevRecords =>
+        prevRecords.map(rec =>
+          rec._id === record._id
+            ? { ...rec, meetLink: meetLink } // Add/update the meetLink for this record
+            : rec
+        )
+      );
 
     } catch (err) {
       console.error(err);
@@ -436,6 +443,21 @@ const DoctorDashboard = ({ children }) => {
 >
   💻 Start Teleconsult
 </button>
+
+{/* ✅ ADD THIS NEW BUTTON */}
+{record.meetLink && (
+  <button
+    onClick={() => {
+      navigator.clipboard.writeText(record.meetLink);
+      alert("Link copied to clipboard!");
+    }}
+    className="px-3 py-1 text-sm font-medium text-white bg-gray-500 rounded-md hover:bg-gray-600 transition"
+    title="Copy teleconsult link"
+  >
+    📋 Copy Link
+  </button>
+)}
+
 
 
 
