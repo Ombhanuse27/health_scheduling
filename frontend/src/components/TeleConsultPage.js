@@ -15,7 +15,7 @@ const TeleConsultPage = () => {
     setIsStarted(true);
 
     const isLocal = window.location.hostname === "localhost";
-    const peer = new Peer({
+    const peerConfig = {
       host: isLocal ? "localhost" : "health-scheduling.onrender.com",
       port: isLocal ? 5000 : 443,
       path: "/peerjs",
@@ -36,9 +36,7 @@ const TeleConsultPage = () => {
           },
         ],
       },
-    });
-
-    peerRef.current = peer;
+    };
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -52,8 +50,8 @@ const TeleConsultPage = () => {
         await myVideo.current.play().catch(() => {});
       }
 
-      // 🔹 Handle incoming call
-      peer.on("call", (call) => {
+      // 🔹 Common function to handle an incoming call
+      const handleIncomingCall = (call) => {
         console.log("📞 Incoming call...");
         call.answer(stream);
         callRef.current = call;
@@ -65,41 +63,65 @@ const TeleConsultPage = () => {
             await remoteVideo.current.play().catch(() => {});
           }
         });
-
         call.on("close", () => console.log("❌ Call closed"));
         call.on("error", (err) => console.error("⚠️ Call error:", err));
+      };
+
+      // 🔹 Common function to handle an outgoing call's stream
+      const handleOutgoingCall = (call) => {
+        callRef.current = call;
+        call.on("stream", async (remoteStream) => {
+          console.log("👀 Connected to remote stream!");
+          if (remoteVideo.current) {
+            remoteVideo.current.srcObject = remoteStream;
+            await remoteVideo.current.play().catch(() => {});
+          }
+        });
+        call.on("close", () => console.log("❌ Remote call closed"));
+        call.on("error", (err) => console.error("⚠️ Remote call error:", err));
+      };
+
+      // 🔹 Attempt to connect as the "Host" (using the roomId from URL as the Peer ID)
+      const hostPeer = new Peer(roomId, peerConfig);
+      peerRef.current = hostPeer;
+
+      hostPeer.on("open", (id) => {
+        console.log(`✅ Connected as HOST with ID: ${id}`);
+        setPeerId(id);
+        // As the host, we just wait for calls
+        hostPeer.on("call", handleIncomingCall);
       });
 
-      // 🔹 Peer connection open
-      peer.on("open", async (id) => {
-        console.log("✅ Peer connected with ID:", id);
-        setPeerId(id);
+      hostPeer.on("error", (err) => {
+        if (err.type === "unavailable-id") {
+          // 🔹 ID is taken, which means the Host is already here.
+          // 🔹 We must connect as a "Joiner" instead.
+          console.log("Host already present. Connecting as JOINER.");
+          hostPeer.destroy(); // Clean up the failed peer attempt
 
-        // If joining someone else's room
-        if (roomId && roomId !== id) {
-          console.log("📡 Connecting to remote peer:", roomId);
-          const call = peer.call(roomId, stream);
-          callRef.current = call;
+          const joinerPeer = new Peer(peerConfig); // Connect with a random ID
+          peerRef.current = joinerPeer;
 
-          call.on("stream", async (remoteStream) => {
-            console.log("👀 Connected to remote stream!");
-            if (remoteVideo.current) {
-              remoteVideo.current.srcObject = remoteStream;
-              await remoteVideo.current.play().catch(() => {});
-            }
+          joinerPeer.on("open", (id) => {
+            console.log(`✅ Connected as JOINER with ID: ${id}`);
+            setPeerId(id);
+
+            // Call the host (who is waiting at the roomId)
+            console.log(`📡 Calling host at: ${roomId}`);
+            const call = joinerPeer.call(roomId, stream);
+            handleOutgoingCall(call);
           });
 
-          call.on("close", () => console.log("❌ Remote call closed"));
-          call.on("error", (err) => console.error("⚠️ Remote call error:", err));
+          // A joiner might also receive a call if both join at the exact same time
+          joinerPeer.on("call", handleIncomingCall);
+          joinerPeer.on("error", (err) =>
+            console.error("🚨 Joiner Peer error:", err)
+          );
         } else {
-          console.log(`🔗 Share this link: ${window.location.origin}/teleconsult/${id}`);
+          // Other unexpected error
+          console.error("🚨 Host Peer error:", err);
         }
       });
-
-      // 🔹 Debug connection states
-      peer.on("disconnected", () => console.warn("⚠️ Peer disconnected"));
-      peer.on("error", (err) => console.error("🚨 Peer error:", err));
-
     } catch (err) {
       console.error("❌ Camera/Mic access error:", err);
       alert("Please allow camera and microphone permissions to continue.");

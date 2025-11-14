@@ -409,6 +409,8 @@ const DoctorDashboard = ({ children }) => {
     );
     if (!confirmStart) return;
 
+    // ... inside the <button onClick={...}> handler for "Start Teleconsult"
+
     try {
       const { data } = await generateTeleconsultLink(record._id);
       const meetLink = data.meetLink;
@@ -420,6 +422,11 @@ const DoctorDashboard = ({ children }) => {
       });
 
       alert(`Teleconsultation link sent to ${record.fullName}!`);
+      
+      // ✅ ADD THIS LINE:
+      // This automatically opens the teleconsult room for the doctor.
+      window.open(meetLink, '_blank'); 
+
     } catch (err) {
       console.error(err);
       alert("Failed to send teleconsultation link.");
