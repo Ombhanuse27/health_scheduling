@@ -1,4 +1,9 @@
 import React, { useState, useEffect } from "react";
+// ✅ NEW: Import the speech recognition hook and 'regenerator-runtime' for it to work
+import "regenerator-runtime/runtime";
+import SpeechRecognition, {
+  useSpeechRecognition,
+} from "react-speech-recognition";
 import {
   getRecords,
   getDoctorsData,
@@ -23,8 +28,33 @@ const DoctorDashboard = ({ children }) => {
     medication: "",
     advice: "",
   });
+  // ✅ NEW: State to track which field is being dictated into
+  const [targetField, setTargetField] = useState(null);
+
+  // const [baseText, setBaseText] = useState("");
 
   const token = localStorage.getItem("token");
+
+  // ✅ NEW: Setup speech recognition hooks
+  const {
+    transcript,
+    listening,
+    resetTranscript,
+    browserSupportsSpeechRecognition,
+  } = useSpeechRecognition();
+
+  // ✅ NEW: Effect to update the form field in real-time as user speaks
+  // ✅ MODIFIED: Effect to update the form field in real-time
+// ✅ A simpler useEffect for debugging
+useEffect(() => {
+  // If we are listening, update the target field directly with the transcript
+  if (targetField) {
+    setPrescription((prev) => ({
+      ...prev,
+      [targetField]: transcript,
+    }));
+  }
+}, [transcript, targetField]);
 
   // Fetch and process data on component mount
   useEffect(() => {
@@ -58,7 +88,8 @@ const DoctorDashboard = ({ children }) => {
 
         // Filter OPD records for the logged-in doctor
         const assignedRecords = opdData.filter((record) => {
-          const assignedDoctorId = record.assignedDoctor?.$oid || record.assignedDoctor;
+          const assignedDoctorId =
+            record.assignedDoctor?.$oid || record.assignedDoctor;
           const loggedInDoctorId = currentDoctor._id?.$oid || currentDoctor._id;
           return assignedDoctorId === loggedInDoctorId;
         });
@@ -98,13 +129,29 @@ const DoctorDashboard = ({ children }) => {
     fetchInitialData();
   }, [token]);
 
+ 
+const startListening = (field) => {
+  setTargetField(field);
+  resetTranscript(); // Clear any previous transcript
+  SpeechRecognition.startListening({ continuous: true });
+};
+
+const stopListening = () => {
+  SpeechRecognition.stopListening();
+  setTargetField(null);
+  // setBaseText(""); // ❌ Remove this
+};
+  // ✅ MODIFIED: When opening modal, also stop listening
   const handleOpenPrescriptionForm = (record) => {
     setSelectedRecord(record);
     // Reset form for a new prescription
     setPrescription({ diagnosis: "", medication: "", advice: "" });
     setShowPrescriptionModal(true);
+    stopListening(); // Ensure listening is off
+    resetTranscript();
   };
 
+  // ✅ MODIFIED: When opening modal, also stop listening
   const handleEditPrescription = (record) => {
     setSelectedRecord(record);
     // Pre-fill form with existing prescription data
@@ -114,6 +161,15 @@ const DoctorDashboard = ({ children }) => {
       advice: record.advice || "",
     });
     setShowPrescriptionModal(true);
+    stopListening(); // Ensure listening is off
+    resetTranscript();
+  };
+
+  // ✅ NEW: Centralized function to close modal and stop listening
+  const closeModal = () => {
+    setShowPrescriptionModal(false);
+    stopListening();
+    resetTranscript();
   };
 
   const generatePdfBase64 = (doctor, record, prescrData) => {
@@ -151,7 +207,7 @@ const DoctorDashboard = ({ children }) => {
     doc.text(`Date: ${new Date().toLocaleDateString()}`, 120, 48);
     doc.text(`Age: ${record.age || "N/A"}`, 10, 55);
     doc.text(`Gender: ${record.gender || "N/A"}`, 60, 55);
-    doc.text(`Diagnosis: ${prescrData.diagnosis}`, 10, 62);
+    doc.text(`Diagnosis: ${prescrData.diagnosis || "N/A"}`, 10, 62); // ✅ Handle empty string
 
     // Prescription Body
     doc.setDrawColor(200);
@@ -168,7 +224,10 @@ const DoctorDashboard = ({ children }) => {
     doc.text("MEDICATION:", 25, 85);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    const medicationLines = doc.splitTextToSize(prescrData.medication, 170);
+    const medicationLines = doc.splitTextToSize(
+      prescrData.medication || "N/A", // ✅ Handle empty string
+      170
+    );
     doc.text(medicationLines, 25, 93);
 
     // Advice
@@ -179,7 +238,10 @@ const DoctorDashboard = ({ children }) => {
     doc.text("ADVICE:", 25, adviceStartY);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    const adviceLines = doc.splitTextToSize(prescrData.advice, 170);
+    const adviceLines = doc.splitTextToSize(
+      prescrData.advice || "N/A", // ✅ Handle empty string
+      170
+    );
     doc.text(adviceLines, 25, adviceStartY + 8);
 
     // Signature
@@ -209,6 +271,11 @@ const DoctorDashboard = ({ children }) => {
 
   const handleSavePrescription = async () => {
     if (!selectedRecord) return;
+
+    // ✅ NEW: Stop listening if user clicks save
+    if (listening) {
+      stopListening();
+    }
 
     const pdfBase64 = generatePdfBase64(
       loggedInDoctor,
@@ -309,7 +376,10 @@ const DoctorDashboard = ({ children }) => {
 
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
-            <label htmlFor="date-select" className="font-semibold text-gray-700">
+            <label
+              htmlFor="date-select"
+              className="font-semibold text-gray-700"
+            >
               Filter by Date:
             </label>
             <select
@@ -318,7 +388,9 @@ const DoctorDashboard = ({ children }) => {
               onChange={(e) => setSelectedDate(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500"
             >
-              <option value="" className="text-black">All Dates</option>
+              <option value="" className="text-black">
+                All Dates
+              </option>
               {uniqueDates.map((date) => (
                 <option key={date} value={date}>
                   {new Date(date).toLocaleDateString("en-US", {
@@ -341,22 +413,35 @@ const DoctorDashboard = ({ children }) => {
                 <tr>
                   <th className="p-4 font-semibold text-gray-600">Patient</th>
                   <th className="p-4 font-semibold text-gray-600">Symptoms</th>
-                  <th className="p-4 font-semibold text-gray-600">Appointment</th>
+                  <th className="p-4 font-semibold text-gray-600">
+                    Appointment
+                  </th>
                   <th className="p-4 font-semibold text-gray-600">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredRecords.length > 0 ? (
                   filteredRecords.map((record) => (
-                    <tr key={record._id} className="border-t border-gray-200 hover:bg-gray-50">
+                    <tr
+                      key={record._id}
+                      className="border-t border-gray-200 hover:bg-gray-50"
+                    >
                       <td className="p-4">
-                        <div className="font-medium text-gray-900">{record.fullName}</div>
-                        <div className="text-sm text-gray-500">Age: {record.age}</div>
+                        <div className="font-medium text-gray-900">
+                          {record.fullName}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          Age: {record.age}
+                        </div>
                       </td>
                       <td className="p-4 text-gray-700">{record.symptoms}</td>
                       <td className="p-4">
-                        <div className="text-gray-900">{record.appointmentDate}</div>
-                        <div className="text-sm text-gray-500">{record.appointmentTime}</div>
+                        <div className="text-gray-900">
+                          {record.appointmentDate}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {record.appointmentTime}
+                        </div>
                       </td>
                       <td className="p-4">
                         {/* 🟢 Improved Button UI */}
@@ -392,82 +477,85 @@ const DoctorDashboard = ({ children }) => {
                             </>
                           ) : (
                             <button
-                              onClick={() => handleOpenPrescriptionForm(record)}
+                              onClick={() =>
+                                handleOpenPrescriptionForm(record)
+                              }
                               className="px-3 py-1 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition"
                               title="Add Prescription"
                             >
                               ➕ Add Prescription
                             </button>
-                            
-
                           )}
 
+                          <button
+                            onClick={async () => {
+                              const confirmStart = window.confirm(
+                                `Are you sure you want to start a teleconsultation with ${record.fullName}?`
+                              );
+                              if (!confirmStart) return;
 
-<button
-  onClick={async () => {
-    const confirmStart = window.confirm(
-      `Are you sure you want to start a teleconsultation with ${record.fullName}?`
-    );
-    if (!confirmStart) return;
+                              try {
+                                const { data } = await generateTeleconsultLink(
+                                  record._id
+                                );
+                                const meetLink = data.meetLink;
 
-    try {
-      const { data } = await generateTeleconsultLink(record._id);
-      const meetLink = data.meetLink;
+                                await sendTeleconsultEmail({
+                                  email: record.email,
+                                  patientName: record.fullName,
+                                  meetLink,
+                                });
 
-      await sendTeleconsultEmail({
-        email: record.email,
-        patientName: record.fullName,
-        meetLink,
-      });
+                                alert(
+                                  `Teleconsultation link sent to ${record.fullName}!`
+                                );
 
-      alert(`Teleconsultation link sent to ${record.fullName}!`);
-      
-      // This automatically opens the teleconsult room for the doctor.
-      window.open(meetLink, '_blank'); 
+                                // This automatically opens the teleconsult room for the doctor.
+                                window.open(meetLink, "_blank");
 
-      // ✅ ADD THIS: Update the state to store the new link against the record
-      setOpdRecords(prevRecords =>
-        prevRecords.map(rec =>
-          rec._id === record._id
-            ? { ...rec, meetLink: meetLink } // Add/update the meetLink for this record
-            : rec
-        )
-      );
+                                // ✅ ADD THIS: Update the state to store the new link against the record
+                                setOpdRecords((prevRecords) =>
+                                  prevRecords.map((rec) =>
+                                    rec._id === record._id
+                                      ? { ...rec, meetLink: meetLink } // Add/update the meetLink for this record
+                                      : rec
+                                  )
+                                );
+                              } catch (err) {
+                                console.error(err);
+                                alert(
+                                  "Failed to send teleconsultation link."
+                                );
+                              }
+                            }}
+                            className="px-3 py-1 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700 transition"
+                          >
+                            💻 Start Teleconsult
+                          </button>
 
-    } catch (err) {
-      console.error(err);
-      alert("Failed to send teleconsultation link.");
-    }
-  }}
-  className="px-3 py-1 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700 transition"
->
-  💻 Start Teleconsult
-</button>
-
-{/* ✅ ADD THIS NEW BUTTON */}
-{record.meetLink && (
-  <button
-    onClick={() => {
-      navigator.clipboard.writeText(record.meetLink);
-      alert("Link copied to clipboard!");
-    }}
-    className="px-3 py-1 text-sm font-medium text-white bg-gray-500 rounded-md hover:bg-gray-600 transition"
-    title="Copy teleconsult link"
-  >
-    📋 Copy Link
-  </button>
-)}
-
-
-
-
+                          {/* ✅ ADD THIS NEW BUTTON */}
+                          {record.meetLink && (
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(record.meetLink);
+                                alert("Link copied to clipboard!");
+                              }}
+                              className="px-3 py-1 text-sm font-medium text-white bg-gray-500 rounded-md hover:bg-gray-600 transition"
+                              title="Copy teleconsult link"
+                            >
+                              📋 Copy Link
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="4" className="text-center p-6 text-gray-500">
+                    <td
+                      colSpan="4"
+                      className="text-center p-6 text-gray-500"
+                    >
                       No records found for the selected date.
                     </td>
                   </tr>
@@ -478,7 +566,7 @@ const DoctorDashboard = ({ children }) => {
         )}
       </div>
 
-      {/* 🟢 Improved Prescription Modal UI */}
+      {/* 🟢 Improved Prescription Modal UI with Voice-to-Text */}
       {showPrescriptionModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg transform transition-all">
@@ -490,35 +578,126 @@ const DoctorDashboard = ({ children }) => {
               <span className="font-semibold">{selectedRecord?.fullName}</span>
             </p>
 
+            {/* ✅ NEW: Check for browser support */}
+            {!browserSupportsSpeechRecognition && (
+              <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 mb-4 rounded">
+                <p>Speech recognition is not supported in this browser.</p>
+              </div>
+            )}
+
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Diagnosis</label>
+                {/* ✅ MODIFIED: Added label wrapper and mic button */}
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Diagnosis
+                  </label>
+                  <button
+                    title="Record Diagnosis"
+                    disabled={
+                      !browserSupportsSpeechRecognition ||
+                      (listening && targetField !== "diagnosis")
+                    }
+                    onClick={() =>
+                      listening && targetField === "diagnosis"
+                        ? stopListening()
+                        : startListening("diagnosis")
+                    }
+                    className={`text-xl ${
+                      listening && targetField === "diagnosis"
+                        ? "text-red-500 animate-pulse"
+                        : "text-blue-500"
+                    } disabled:text-gray-300`}
+                  >
+                    {listening && targetField === "diagnosis" ? "⏹️" : "🎙️"}
+                  </button>
+                </div>
                 <input
                   type="text"
                   placeholder="e.g., Viral Fever"
                   className="w-full p-2 border border-gray-300 text-black rounded-md focus:ring-2 focus:ring-blue-500"
                   value={prescription.diagnosis}
-                  onChange={(e) => setPrescription({ ...prescription, diagnosis: e.target.value })}
+                  onChange={(e) =>
+                    setPrescription({
+                      ...prescription,
+                      diagnosis: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Medication (Rx)</label>
+                {/* ✅ MODIFIED: Added label wrapper and mic button */}
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Medication (Rx)
+                  </label>
+                  <button
+                    title="Record Medication"
+                    disabled={
+                      !browserSupportsSpeechRecognition ||
+                      (listening && targetField !== "medication")
+                    }
+                    onClick={() =>
+                      listening && targetField === "medication"
+                        ? stopListening()
+                        : startListening("medication")
+                    }
+                    className={`text-xl ${
+                      listening && targetField === "medication"
+                        ? "text-red-500 animate-pulse"
+                        : "text-blue-500"
+                    } disabled:text-gray-300`}
+                  >
+                    {listening && targetField === "medication" ? "⏹️" : "🎙️"}
+                  </button>
+                </div>
                 <textarea
                   placeholder="e.g., Paracetamol 500mg - 1 tablet twice a day"
                   rows="4"
                   className="w-full p-2 border border-gray-300 text-black rounded-md focus:ring-2 focus:ring-blue-500"
                   value={prescription.medication}
-                  onChange={(e) => setPrescription({ ...prescription, medication: e.target.value })}
+                  onChange={(e) =>
+                    setPrescription({
+                      ...prescription,
+                      medication: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Advice</label>
+                {/* ✅ MODIFIED: Added label wrapper and mic button */}
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Advice
+                  </label>
+                  <button
+                    title="Record Advice"
+                    disabled={
+                      !browserSupportsSpeechRecognition ||
+                      (listening && targetField !== "advice")
+                    }
+                    onClick={() =>
+                      listening && targetField === "advice"
+                        ? stopListening()
+                        : startListening("advice")
+                    }
+                    className={`text-xl ${
+                      listening && targetField === "advice"
+                        ? "text-red-500 animate-pulse"
+                        : "text-blue-500"
+                    } disabled:text-gray-300`}
+                  >
+                    {listening && targetField === "advice" ? "⏹️" : "🎙️"}
+                  </button>
+                </div>
                 <textarea
                   placeholder="e.g., Take complete rest, drink plenty of fluids"
                   rows="3"
                   className="w-full p-2 border border-gray-300 text-black rounded-md focus:ring-2 focus:ring-blue-500"
                   value={prescription.advice}
-                  onChange={(e) => setPrescription({ ...prescription, advice: e.target.value })}
+                  onChange={(e) =>
+                    setPrescription({ ...prescription, advice: e.target.value })
+                  }
                 />
               </div>
             </div>
@@ -526,7 +705,7 @@ const DoctorDashboard = ({ children }) => {
             <div className="flex justify-end gap-4 mt-8">
               <button
                 className="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition"
-                onClick={() => setShowPrescriptionModal(false)}
+                onClick={closeModal} // ✅ MODIFIED: Use new close function
               >
                 Cancel
               </button>

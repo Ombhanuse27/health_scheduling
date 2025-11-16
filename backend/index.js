@@ -9,7 +9,7 @@ const adminRoutes = require("./Routes/adminRoutes");
 const opdRoutes = require("./Routes/opdRoutes");
 const doctorRoutes = require("./Routes/doctorRoutes");
 const emailRoutes = require("./Routes/emailRoutes");
-
+const aiWebhookRoutes = require('./Routes/aiWebhookRoutes');
 
 
 const app = express();
@@ -43,6 +43,7 @@ app.use("/api/doctors", doctorRoutes);
 app.use("/api", hospitalRoutes);
 app.use("/api", opdRoutes);
 app.use("/api", emailRoutes);
+app.use("/api/ai", aiWebhookRoutes);
 
 app.get("/", (req, res) => res.send("🏥 Hospital Queuing System Running"));
 
