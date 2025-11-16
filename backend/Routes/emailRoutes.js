@@ -1,53 +1,46 @@
 const express = require('express');
 const router = express.Router();
-const nodemailer = require('nodemailer');
 const { v4: uuidv4 } = require("uuid");
+const brevo = require("@getbrevo/brevo");
 
+// Initialize Brevo
+let apiInstance = new brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(
+  brevo.TransactionalEmailsApiApiKeys.apiKey,
+  process.env.BREVO_API_KEY
+);
 
-// ✅ MODIFIED: This route now accepts dynamic attachment info
+// =========================
+// 1️⃣ Send Prescription Email
+// =========================
 router.post('/send-prescription', async (req, res) => {
-  // Destructure new fields
   const { email, patientName, base64Data, contentType, filename } = req.body;
 
   if (!email || !base64Data || !patientName || !contentType || !filename) {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: false, // `false` because port is 587 (uses STARTTLS)
-    auth: {
-        user: process.env.EMAIL_USER, // Your Brevo email
-        pass: process.env.EMAIL_PASS, // Your Brevo SMTP Key
-    },
-  });
-
-  const mailOptions = {
-    from: process.env.EMAIL_FROM,
-    to: email,
-    subject: "Your Medical Prescription",
-    text: `Dear ${patientName},\n\nPlease find attached your prescription.`,
-    attachments: [
-      {
-        filename: filename, // Use dynamic filename (e.g., "prescription.pdf" or "prescription.jpg")
-        content: base64Data, // Use dynamic data
-        encoding: "base64",
-        contentType: contentType, // Use dynamic content type
-      },
-    ],
-  };
-
   try {
-    await transporter.sendMail(mailOptions);
-    res.status(200).json({ message: "Email sent successfully" });
-  } catch (error) {
-    console.error("Error sending email:", error);
-    res.status(500).json({ message: "Failed to send email" });
-  }
-}); 
+    await apiInstance.sendTransacEmail({
+      sender: { email: process.env.EMAIL_FROM },
+      to: [{ email }],
+      subject: "Your Medical Prescription",
+      htmlContent: `<p>Dear ${patientName},</p><p>Please find attached your prescription.</p>`,
+      attachment: [
+        { name: filename, content: base64Data }
+      ],
+    });
 
-// ✅ 1. Generate Teleconsultation Link
+    res.status(200).json({ message: "Prescription sent successfully!" });
+  } catch (error) {
+    console.error("Error sending prescription:", error);
+    res.status(500).json({ message: "Failed to send prescription" });
+  }
+});
+
+// ===============================
+// 2️⃣ Generate Teleconsult Link
+// ===============================
 router.get("/generate-link/:appointmentId", async (req, res) => {
   try {
     const { appointmentId } = req.params;
@@ -61,42 +54,33 @@ router.get("/generate-link/:appointmentId", async (req, res) => {
   }
 });
 
-// ✅ 2. Send Teleconsultation Email
+// ================================
+// 3️⃣ Send Teleconsultation Email
+// ================================
 router.post("/send-teleconsult", async (req, res) => {
   const { email, patientName, meetLink } = req.body;
 
-  if (!email || !meetLink || !patientName) {
+  if (!email || !patientName || !meetLink) {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: false, // `false` because port is 587 (uses STARTTLS)
-    auth: {
-        user: process.env.EMAIL_USER, // Your Brevo email
-        pass: process.env.EMAIL_PASS, // Your Brevo SMTP Key
-    },
-  });
-
-  const mailOptions = {
-    from: process.env.EMAIL_FROM,
-    to: email,
-    subject: "Your Teleconsultation Link",
-    html: `
-      <h2>Dear ${patientName},</h2>
-      <p>Your teleconsultation session is ready.</p>
-      <p><strong>Join here:</strong> <a href="${meetLink}" target="_blank">${meetLink}</a></p>
-      <p>Thank you,<br/>Hospital Team</p>
-    `,
-  };
-
   try {
-    await transporter.sendMail(mailOptions);
+    await apiInstance.sendTransacEmail({
+      sender: { email: process.env.EMAIL_FROM },
+      to: [{ email }],
+      subject: "Your Teleconsultation Link",
+      htmlContent: `
+        <h3>Hello ${patientName},</h3>
+        <p>Your teleconsultation session is ready.</p>
+        <p><strong>Join here:</strong> <a href="${meetLink}" target="_blank">${meetLink}</a></p>
+        <p>Thank you,<br/>Hospital Team</p>
+      `,
+    });
+
     res.status(200).json({ message: "Teleconsultation email sent successfully!" });
   } catch (error) {
     console.error("Failed to send teleconsultation email:", error);
-    res.status(500).json({ message: "Failed to send teleconsultation email", error });
+    res.status(500).json({ message: "Failed to send teleconsultation email" });
   }
 });
 

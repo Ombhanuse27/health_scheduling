@@ -6,20 +6,21 @@ const Counter = require("../model/counterModel");
 const Admin = require("../model/adminModel");
 const authMiddleware = require("../middleware/authMiddleware");
 require("dotenv").config();
-const nodemailer = require("nodemailer");
+// ⛔️ REMOVED: const nodemailer = require("nodemailer");
+// ✅ ADDED: Brevo SDK
+const brevo = require("@getbrevo/brevo");
 
 const router = express.Router();
 
-// Submit OPD Form
-const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: false, // `false` because port is 587 (uses STARTTLS)
-    auth: {
-        user: process.env.EMAIL_USER, // Your Brevo email
-        pass: process.env.EMAIL_PASS, // Your Brevo SMTP Key
-    },
-});
+// ✅ ADDED: Brevo API setup
+let apiInstance = new brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(
+  brevo.TransactionalEmailsApiApiKeys.apiKey,
+  process.env.BREVO_API_KEY // Make sure this is set in Render
+);
+
+// ⛔️ REMOVED: Nodemailer transporter
+// const transporter = nodemailer.createTransport({ ... });
 
 // ✅ Converts time string to minutes
 const toMinutes = (time) => {
@@ -60,7 +61,7 @@ const formatTime = (minutes) => {
   return `${hours}:${mins} ${period}`;
 };
 
-// Helper functions (toMinutes, parseSlotTime, formatTime) and nodemailer transporter remain the same.
+// Helper functions (toMinutes, parseSlotTime, formatTime) remain the same.
 
 router.post("/opd/:hospitalId", async (req, res) => {
   console.log(req.body);
@@ -69,6 +70,7 @@ router.post("/opd/:hospitalId", async (req, res) => {
     const { hospitalId } = req.params;
     const { fullName, contactNumber, email, preferredSlot,selectedDoctor } = req.body;
 
+    // ... (Validation, Time Calculation, and Database logic remains unchanged) ...
     // --- Validation ---
     if (!mongoose.Types.ObjectId.isValid(hospitalId)) {
       return res.status(400).json({ error: "Invalid Hospital ID" });
@@ -154,14 +156,21 @@ router.post("/opd/:hospitalId", async (req, res) => {
       { new: true }
     );
 
-    // --- Send Confirmation Email ---
+    // --- ✅ CHANGED: Send Confirmation Email via Brevo API ---
     if (email) {
-      await transporter.sendMail({
-        from: process.env.EMAIL_FROM,
-        to: email,
-        subject: "Appointment Confirmation",
-        text: `Dear ${fullName},\n\nYour appointment is confirmed:\n📅 Date: ${localDate}\n🕒 Time: ${appointmentTimeStr}\n🔢 Appointment Number: ${counter.seq}\n\nThank you for choosing our service.`,
-      });
+      try {
+        await apiInstance.sendTransacEmail({
+          sender: { email: process.env.EMAIL_FROM },
+          to: [{ email: email, name: fullName }],
+          subject: "Appointment Confirmation",
+          // Use textContent for plain text.
+          textContent: `Dear ${fullName},\n\nYour appointment is confirmed:\n📅 Date: ${localDate}\n🕒 Time: ${appointmentTimeStr}\n🔢 Appointment Number: ${counter.seq}\n\nThank you for choosing our service.`,
+        });
+        console.log("Appointment confirmation email sent successfully via Brevo API.");
+      } catch (emailError) {
+        console.error("Error sending confirmation email:", emailError);
+        // Do not stop the main function, just log the error
+      }
     }
 
     res.status(201).json({
@@ -173,6 +182,8 @@ router.post("/opd/:hospitalId", async (req, res) => {
     res.status(500).json({ error: "An internal server error occurred." });
   }
 });
+
+// ... (all other routes: /checkDuplicate, /dashboard, /doctor/opd, etc. remain unchanged) ...
 
 router.post("/checkDuplicate", async (req, res) => {
   const { fullName, hospitalId } = req.body;
@@ -281,6 +292,5 @@ router.put("/opd/:id/prescription", async (req, res) => {
     res.status(500).json({ error: "Failed to save prescription" });
   }
 });
-
 
 module.exports = router;

@@ -2,27 +2,24 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs'); 
-const nodemailer = require('nodemailer');
 const Doctor = require('../model/Doctor');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const authMiddleware = require('../middleware/authMiddleware');
 const opdModel = require('../model/opdModel');
-
+// ⛔️ REMOVED: const axios = require("axios");
+// ✅ ADDED: Brevo SDK
+const brevo = require("@getbrevo/brevo");
 
 // Load environment variables
 require('dotenv').config();
 
-// Nodemailer transporter setup
-const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: false, // `false` because port is 587 (uses STARTTLS)
-    auth: {
-        user: process.env.EMAIL_USER, // Your Brevo email
-        pass: process.env.EMAIL_PASS, // Your Brevo SMTP Key
-    },
-});
+// ✅ ADDED: Brevo API setup
+let apiInstance = new brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(
+  brevo.TransactionalEmailsApiApiKeys.apiKey,
+  process.env.BREVO_API_KEY // Make sure this is set in Render
+);
 
 router.post('/addDoctors', async (req, res) => {
     const doctorData = req.body;
@@ -39,28 +36,28 @@ router.post('/addDoctors', async (req, res) => {
             return res.status(400).json({ error: "Doctor with this email already exists." });
         }
 
-        // Hash the password
+        // Hash password
         const salt = await bcrypt.genSalt(10);
         doctorData.password = await bcrypt.hash(plainPassword, salt);
 
         const newDoctor = new Doctor(doctorData);
         await newDoctor.save();
 
-        // Send email
-        const mailOptions = {
-            from: process.env.EMAIL_FROM,
-            to: doctorData.email,
-            subject: 'Doctor Registration Successful',
-            text: `Welcome ${doctorData.fullName},\n\nYour account has been created successfully.\n\nUsername: ${doctorData.email}\nPassword: ${plainPassword}\n\nPlease keep this information secure.`,
-        };
-
-        transporter.sendMail(mailOptions, (err, info) => {
-            if (err) {
-                console.error('Error sending email:', err);
-            } else {
-                console.log('Email sent:', info.response);
-            }
-        });
+        // -------------------------------
+        // ✅ Brevo Email API (using SDK)
+        // -------------------------------
+        try {
+            await apiInstance.sendTransacEmail({
+              sender: { email: process.env.EMAIL_FROM },
+              to: [{ email: doctorData.email, name: doctorData.fullName }],
+              subject: "Doctor Registration Successful",
+              textContent: `Welcome ${doctorData.fullName},\n\nYour account has been created successfully.\n\nUsername: ${doctorData.email}\nPassword: ${plainPassword}\n\nPlease keep this information secure.`,
+            });
+            console.log("Doctor registration email sent successfully via Brevo API.");
+        } catch (emailErr) {
+            console.error("Error sending registration email:", emailErr);
+            // Don't stop the main function, just log the error
+        }
 
         res.status(201).json({ message: 'Doctor registered successfully', doctor: newDoctor });
 
@@ -72,10 +69,9 @@ router.post('/addDoctors', async (req, res) => {
 
 
 // Get all doctors
-// In your backend API (Node.js/Express example)
 router.get('/getDoctors', async (req, res) => {
     try {
-      const doctorsData = await Doctor.find().populate('hospital'); // Replace with your model and query logic
+      const doctorsData = await Doctor.find().populate('hospital');
       res.json(doctorsData);
     } catch (error) {
       res.status(500).json({ message: 'Error fetching doctors' });
@@ -94,40 +90,7 @@ router.delete("/deleteDoctor/:id", async (req, res) => {
   }
 });
 
-
-
-// router.post("/prescriptions", authMiddleware, async (req, res) => {
-//   try {
-//     const { appointmentId, pdfBase64 } = req.body;
-
-//     if (!appointmentId || !pdfBase64) {
-//       return res.status(400).json({ error: "Missing appointmentId or pdfBase64" });
-//     }
-
-//     const updated = await opdModel.findByIdAndUpdate(
-//       appointmentId,
-//       { 
-//         prescriptionPdf: {
-//           data: pdfBase64,
-//           contentType: "application/pdf",
-//         },
-//       },
-//       { new: true }
-//     );
-
-//     if (!updated) {
-//       return res.status(404).json({ error: "Appointment not found" });
-//     }
-
-//     res.json({ message: "Prescription saved successfully." });
-//   } catch (error) {
-//     console.error("Error saving prescription:", error);
-//     res.status(500).json({ error: error.message });
-//   }
-// });
-
-
-// ✅ MODIFIED: This route now returns all necessary prescription data
+// Get prescriptions
 router.get("/getPrescriptions", authMiddleware, async (req, res) => {
   try {
     const prescriptions = await opdModel.find({
@@ -137,10 +100,10 @@ router.get("/getPrescriptions", authMiddleware, async (req, res) => {
     const formatted = prescriptions.map((record) => ({
       appointmentId: record._id,
       pdfBase64: record.prescriptionPdf?.data,
-      contentType: record.prescriptionPdf?.contentType || 'application/pdf', // Send content type
-      diagnosis: record.diagnosis,     // <-- BUG FIX: Send diagnosis
-      medication: record.medication,   // <-- BUG FIX: Send medication
-      advice: record.advice,         // <-- BUG FIX: Send advice
+      contentType: record.prescriptionPdf?.contentType || 'application/pdf',
+      diagnosis: record.diagnosis,
+      medication: record.medication,
+      advice: record.advice,
     }));
     
     res.json(formatted);
@@ -150,9 +113,7 @@ router.get("/getPrescriptions", authMiddleware, async (req, res) => {
   }
 });
 
-
-
-
+// Doctor login
 router.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
@@ -171,7 +132,6 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ message: "Invalid credentials." });
         }
 
-        // Optional: Create JWT token
         const token = jwt.sign(
             { id: doctor._id, role: "doctor" },
             process.env.JWT_SECRET || "defaultsecret",
@@ -194,6 +154,5 @@ router.post('/login', async (req, res) => {
         res.status(500).json({ message: "Login failed", error: error.message });
     }
 });
-
 
 module.exports = router;
