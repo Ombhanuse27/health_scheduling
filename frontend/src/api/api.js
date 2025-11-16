@@ -163,11 +163,21 @@ export const getRecords = (token) =>
   });
 
   // Save new prescription (if not exists)
-export const savePrescriptionPdf = async (token, recordId, pdfBase64, diagnosis, medication, advice) => {
+// ✅ MODIFIED: Function signature and data payload updated
+export const savePrescriptionPdf = async (
+  token,
+  recordId,
+  base64Data, // Renamed from pdfBase64
+  contentType, // Added
+  diagnosis,
+  medication,
+  advice
+) => {
   return await axios.put(
     `${BASE_URL}/opd/${recordId}/prescription`,
     {
-      pdfBase64,
+      base64Data, // Send new field name
+      contentType, // Send new field
       diagnosis,
       medication,
       advice,
@@ -181,7 +191,6 @@ export const savePrescriptionPdf = async (token, recordId, pdfBase64, diagnosis,
 };
 
 
-
 export const getPrescriptions = (token) => {
   return axios.get(`${BASE_URL}/doctors/getPrescriptions`, {
     headers: {
@@ -191,11 +200,20 @@ export const getPrescriptions = (token) => {
 };
 
 
-export const sendPrescriptionEmail = async ({ email, patientName, pdfBase64 }) => {
+// ✅ MODIFIED: Function signature and data payload updated
+export const sendPrescriptionEmail = async ({
+  email,
+  patientName,
+  base64Data, // Renamed
+  contentType, // Added
+  filename, // Added
+}) => {
   return await axios.post(`${BASE_URL}/send-prescription`, {
     email,
     patientName,
-    pdfBase64,
+    base64Data,
+    contentType,
+    filename,
   });
 };
 

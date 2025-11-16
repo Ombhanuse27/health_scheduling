@@ -15,10 +15,12 @@ require('dotenv').config();
 
 // Nodemailer transporter setup
 const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: process.env.EMAIL_HOST,
+    port: process.env.EMAIL_PORT,
+    secure: false, // `false` because port is 587 (uses STARTTLS)
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: process.env.EMAIL_USER, // Your Brevo email
+        pass: process.env.EMAIL_PASS, // Your Brevo SMTP Key
     },
 });
 
@@ -46,7 +48,7 @@ router.post('/addDoctors', async (req, res) => {
 
         // Send email
         const mailOptions = {
-            from: process.env.EMAIL_USER,
+            from: process.env.EMAIL_FROM,
             to: doctorData.email,
             subject: 'Doctor Registration Successful',
             text: `Welcome ${doctorData.fullName},\n\nYour account has been created successfully.\n\nUsername: ${doctorData.email}\nPassword: ${plainPassword}\n\nPlease keep this information secure.`,
@@ -125,15 +127,22 @@ router.delete("/deleteDoctor/:id", async (req, res) => {
 // });
 
 
+// ✅ MODIFIED: This route now returns all necessary prescription data
 router.get("/getPrescriptions", authMiddleware, async (req, res) => {
   try {
-    const prescriptions = await opdModel.find({ prescriptionPdf: { $ne: null } });
-
+    const prescriptions = await opdModel.find({
+      prescriptionPdf: { $ne: null },
+    });
+    
     const formatted = prescriptions.map((record) => ({
       appointmentId: record._id,
       pdfBase64: record.prescriptionPdf?.data,
+      contentType: record.prescriptionPdf?.contentType || 'application/pdf', // Send content type
+      diagnosis: record.diagnosis,     // <-- BUG FIX: Send diagnosis
+      medication: record.medication,   // <-- BUG FIX: Send medication
+      advice: record.advice,         // <-- BUG FIX: Send advice
     }));
-
+    
     res.json(formatted);
   } catch (error) {
     console.error("Error fetching prescriptions:", error);

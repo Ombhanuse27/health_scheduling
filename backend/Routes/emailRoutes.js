@@ -4,44 +4,48 @@ const nodemailer = require('nodemailer');
 const { v4: uuidv4 } = require("uuid");
 
 
+// ✅ MODIFIED: This route now accepts dynamic attachment info
 router.post('/send-prescription', async (req, res) => {
-  const { email, patientName, pdfBase64 } = req.body;
+  // Destructure new fields
+  const { email, patientName, base64Data, contentType, filename } = req.body;
 
-  if (!email || !pdfBase64 || !patientName) {
+  if (!email || !base64Data || !patientName || !contentType || !filename) {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: process.env.EMAIL_HOST,
+    port: process.env.EMAIL_PORT,
+    secure: false, // `false` because port is 587 (uses STARTTLS)
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+        user: process.env.EMAIL_USER, // Your Brevo email
+        pass: process.env.EMAIL_PASS, // Your Brevo SMTP Key
     },
   });
 
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: process.env.EMAIL_FROM,
     to: email,
     subject: "Your Medical Prescription",
     text: `Dear ${patientName},\n\nPlease find attached your prescription.`,
     attachments: [
       {
-        filename: "prescription.pdf",
-        content: pdfBase64,
+        filename: filename, // Use dynamic filename (e.g., "prescription.pdf" or "prescription.jpg")
+        content: base64Data, // Use dynamic data
         encoding: "base64",
-        contentType: "application/pdf",
+        contentType: contentType, // Use dynamic content type
       },
     ],
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    res.status(200).json({ message: "Email sent successfully!" });
+    res.status(200).json({ message: "Email sent successfully" });
   } catch (error) {
-    console.error("Failed to send email:", error);
-    res.status(500).json({ message: "Failed to send email", error });
+    console.error("Error sending email:", error);
+    res.status(500).json({ message: "Failed to send email" });
   }
-});
+}); 
 
 // ✅ 1. Generate Teleconsultation Link
 router.get("/generate-link/:appointmentId", async (req, res) => {
@@ -66,15 +70,17 @@ router.post("/send-teleconsult", async (req, res) => {
   }
 
   const transporter = nodemailer.createTransport({
-    service: "gmail",
+    host: process.env.EMAIL_HOST,
+    port: process.env.EMAIL_PORT,
+    secure: false, // `false` because port is 587 (uses STARTTLS)
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+        user: process.env.EMAIL_USER, // Your Brevo email
+        pass: process.env.EMAIL_PASS, // Your Brevo SMTP Key
     },
   });
 
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: process.env.EMAIL_FROM,
     to: email,
     subject: "Your Teleconsultation Link",
     html: `

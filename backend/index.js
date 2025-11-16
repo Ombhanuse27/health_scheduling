@@ -26,7 +26,9 @@ app.use(
   })
 );
 
-app.use(express.json());
+// ✅ THE FIX: Increase the payload size limit
+app.use(express.json({ limit: '50mb' })); 
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // ✅ MongoDB connection
 mongoose

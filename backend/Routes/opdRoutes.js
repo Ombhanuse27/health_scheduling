@@ -12,11 +12,13 @@ const router = express.Router();
 
 // Submit OPD Form
 const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
+    host: process.env.EMAIL_HOST,
+    port: process.env.EMAIL_PORT,
+    secure: false, // `false` because port is 587 (uses STARTTLS)
+    auth: {
+        user: process.env.EMAIL_USER, // Your Brevo email
+        pass: process.env.EMAIL_PASS, // Your Brevo SMTP Key
+    },
 });
 
 // ✅ Converts time string to minutes
@@ -155,7 +157,7 @@ router.post("/opd/:hospitalId", async (req, res) => {
     // --- Send Confirmation Email ---
     if (email) {
       await transporter.sendMail({
-        from: process.env.EMAIL_USER,
+        from: process.env.EMAIL_FROM,
         to: email,
         subject: "Appointment Confirmation",
         text: `Dear ${fullName},\n\nYour appointment is confirmed:\n📅 Date: ${localDate}\n🕒 Time: ${appointmentTimeStr}\n🔢 Appointment Number: ${counter.seq}\n\nThank you for choosing our service.`,
@@ -257,14 +259,15 @@ router.delete("/opd/:id",authMiddleware,async (req, res) => {
 });
 
 router.put("/opd/:id/prescription", async (req, res) => {
-  const { pdfBase64, diagnosis, medication, advice } = req.body;
+  // Destructure the new request body
+  const { base64Data, contentType, diagnosis, medication, advice } = req.body;
   try {
     const updated = await opdModel.findByIdAndUpdate(
       req.params.id,
       {
         prescriptionPdf: {
-          data: pdfBase64,
-          contentType: "application/pdf",
+          data: base64Data, // Save base64 data
+          contentType: contentType, // Save the content type
         },
         diagnosis,
         medication,
@@ -278,7 +281,6 @@ router.put("/opd/:id/prescription", async (req, res) => {
     res.status(500).json({ error: "Failed to save prescription" });
   }
 });
-
 
 
 module.exports = router;
