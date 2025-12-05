@@ -1,5 +1,5 @@
 // --- routes/aiWebhookRoutes.js ---
-// VERSION: SERVER-SIDE SPEECH GENERATION (Fixes "Reading variable names")
+// VERSION: FIXED MEMORY RETENTION (Prevents restarting from scratch)
 
 const express = require("express");
 const axios = require("axios");
@@ -10,7 +10,7 @@ const mongoose = require("mongoose");
 // --- 1. SET YOUR MANUAL VALUES HERE ---
 // ====================================================================
 
-// ✅ YOUR CORRECT HOSPITAL ID (Fixed: Removed the 'Y')
+// ✅ YOUR CORRECT HOSPITAL ID
 const HOSPITAL_ID = "67dd317314b7277ff78e37b8"; 
 
 // ✅ YOUR HOSPITAL NAME
@@ -99,13 +99,13 @@ router.post("/webhook", async (req, res) => {
   // Use 'queryResult' for Dialogflow ES
   const action = req.body.queryResult.action;
   const params = req.body.queryResult.parameters;
-  const queryText = req.body.queryResult.queryText;
+  const queryText = req.body.queryResult.queryText; 
   const outputContexts = req.body.queryResult.outputContexts || [];
   const session = req.body.session;
 
-    console.log("------------------------------------------------");
+  console.log("------------------------------------------------");
   console.log(`AI Webhook: Action=${action}`);
-  console.log(`User said: "${queryText}"`); // <--- THIS WILL SHOW IN LOGS
+  console.log(`User said: "${queryText}"`); 
   console.log("Parameters:", JSON.stringify(params, null, 2));
   console.log("------------------------------------------------");
 
@@ -113,7 +113,6 @@ router.post("/webhook", async (req, res) => {
     try {
       
       // --- FLOW 1: INITIALIZATION (Ask for Slots) ---
-      // If preferredSlot is missing, fetch data and ASK THE USER from code.
       if (!params.preferredSlot) {
         console.log("AI Webhook: Fetching initial data...");
         const hospital = await Admin.findById(HOSPITAL_ID);
@@ -131,12 +130,10 @@ router.post("/webhook", async (req, res) => {
         doctorMap["any"] = null; 
         doctorMap["any available"] = null;
 
-        // ✅ FIX: The backend generates the FULL sentence.
-        // This prevents Dialogflow from reading "#session-vars" literally.
         const speech = `Our available 3-hour slots are: ${slots.join(", ")}. Which do you prefer?`;
 
         return res.json({
-          fulfillmentText: speech, // Dialogflow will speak this text
+          fulfillmentText: speech, 
           outputContexts: [
             {
               name: `${session}/contexts/session-vars`,
@@ -151,13 +148,10 @@ router.post("/webhook", async (req, res) => {
       }
 
       // --- FLOW 2: SLOT CHOSEN (Ask for Doctor) ---
-      // If slot is picked but doctor is not, ASK THE USER from code.
       else if (!params.selectedDoctor) {
-        // Retrieve doctor list from memory
         const sessionVars = outputContexts.find(ctx => ctx.name.endsWith("session-vars"));
         const availableDoctors = sessionVars ? sessionVars.parameters.availableDoctors : "any available";
 
-        // ✅ FIX: The backend generates the FULL sentence.
         const speech = `For that slot, available doctors are: ${availableDoctors}. Do you prefer one, or 'any available'?`;
 
         return res.json({
@@ -170,6 +164,9 @@ router.post("/webhook", async (req, res) => {
         console.log("AI Webhook: Booking...");
         const fullName = (typeof params.fullName === 'object') ? params.fullName.name : params.fullName;
         
+        // Handle email safely
+        const emailAddress = (params.email && typeof params.email === 'object') ? params.email.email : params.email;
+
         const isDuplicate = await checkDuplicateLogic(fullName, HOSPITAL_ID);
         if (isDuplicate) {
           return res.json({
@@ -191,7 +188,7 @@ router.post("/webhook", async (req, res) => {
           age: params.age,
           gender: params.gender,
           contactNumber: params.contactNumber, 
-          email: params.email || null,
+          email: emailAddress || null, 
           address: "Booked via AI Agent",
           symptoms: params.symptoms,
           hospitalId: HOSPITAL_ID,
@@ -217,8 +214,29 @@ router.post("/webhook", async (req, res) => {
         });
       }
       
-      // --- FLOW 4: MIDDLE QUESTIONS (Let Dialogflow handle Name, Age, etc.) ---
-      return res.json({});
+      // --- FLOW 4: MIDDLE QUESTIONS (Safety Net) ---
+      // ✅ FIX: This ensures we KEEP the 'session-vars' context alive 
+      // even if the AI doesn't understand the user's input (like 'See where?')
+      else {
+        // Find existing session-vars context to preserve it
+        const sessionVars = outputContexts.find(ctx => ctx.name.endsWith("session-vars"));
+        
+        if (sessionVars) {
+          // Re-send the context to refresh its lifespan
+          return res.json({
+            outputContexts: [
+              {
+                name: `${session}/contexts/session-vars`,
+                lifespanCount: 50,
+                parameters: sessionVars.parameters
+              }
+            ]
+          });
+        }
+        
+        // Default fallthrough
+        return res.json({});
+      }
 
     } catch (error) {
       console.error("Webhook Error:", error);

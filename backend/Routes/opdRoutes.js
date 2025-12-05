@@ -22,7 +22,37 @@ apiInstance.setApiKey(
 // ✅ Fast2SMS API Key
 const FAST2SMS_API_KEY = "9OgY26Jj0QSCKr7iEqLGpbcRlFHTMeuw4BZxovU3Xtdy1Df5zANSqMjBkLDVHGJ8egTErwit3xOcXCvl";
 
-// ✅ Converts time string to minutes
+// ====================================================================
+// --- HELPER FUNCTIONS ---
+// ====================================================================
+
+// ✅ NEW: Clean Phone Number (Removes hyphens, dots, spaces)
+const cleanPhoneNumber = (raw) => {
+  if (!raw) return "";
+  // Removes everything that is NOT a digit (0-9)
+  return raw.toString().replace(/\D/g, ""); 
+};
+
+// ✅ NEW: Clean Time Slot (Fixes "to" and "p.m.")
+const cleanTimeSlot = (raw) => {
+  if (!raw) return "";
+  let clean = raw.toString().toLowerCase();
+  
+  // Replace " to " with " - " (Common AI mistake)
+  clean = clean.replace(/\s+to\s+/g, " - ");
+  
+  // Fix p.m. / a.m. (Remove dots, standardize spacing)
+  clean = clean.replace(/p\.?m\.?/g, " PM").replace(/a\.?m\.?/g, " AM");
+  
+  // Ensure hyphen has spaces around it
+  if (clean.includes("-") && !clean.includes(" - ")) {
+    clean = clean.replace("-", " - ");
+  }
+  
+  return clean.toUpperCase(); // Ensure AM/PM are uppercase
+};
+
+// Converts time string to minutes
 const toMinutes = (time) => {
   if (!time || typeof time !== "string") return NaN;
 
@@ -39,7 +69,7 @@ const toMinutes = (time) => {
   return hour * 60 + minute;
 };
 
-// ✅ Parses slot times correctly
+// Parses slot times correctly
 const parseSlotTime = (slot) => {
   if (!slot || typeof slot !== "string" || !slot.includes(" - ")) {
     throw new Error(`Invalid slot format: ${slot}`);
@@ -49,7 +79,7 @@ const parseSlotTime = (slot) => {
   return { start: toMinutes(startStr), end: toMinutes(endStr), startStr, endStr };
 };
 
-// ✅ Converts minutes back to time string
+// Converts minutes back to time string
 const formatTime = (minutes) => {
   if (isNaN(minutes) || minutes < 0) return "Invalid Time";
 
@@ -61,20 +91,39 @@ const formatTime = (minutes) => {
   return `${hours}:${mins} ${period}`;
 };
 
+// ====================================================================
+// --- ROUTES ---
+// ====================================================================
+
 // --- POST: Book Appointment ---
 router.post("/opd/:hospitalId", async (req, res) => {
-  console.log(req.body);
+  console.log("Raw Body Received:", req.body);
 
   try {
     const { hospitalId } = req.params;
-    const { fullName, contactNumber, email, preferredSlot, selectedDoctor } = req.body;
+    // We use 'let' because we need to modify/clean these variables
+    let { fullName, contactNumber, email, preferredSlot, selectedDoctor } = req.body;
+
+    // --- 1. DATA SANITIZATION (Fixing AI inputs) ---
+    // Fix Phone: "775-709-8385." -> "7757098385"
+    if (contactNumber) {
+        contactNumber = cleanPhoneNumber(contactNumber);
+    }
+    
+    // Fix Slot: "6:30 p.m. to 9:30 p.m." -> "6:30 PM - 9:30 PM"
+    if (preferredSlot) {
+        preferredSlot = cleanTimeSlot(preferredSlot);
+    }
+
+    console.log("Cleaned Data used for Booking:", { contactNumber, preferredSlot });
 
     // --- Validation ---
     if (!mongoose.Types.ObjectId.isValid(hospitalId)) {
       return res.status(400).json({ error: "Invalid Hospital ID" });
     }
-    if (!preferredSlot || typeof preferredSlot !== "string") {
-      return res.status(400).json({ message: "Invalid preferredSlot format." });
+    // Check for " - " specifically because our parser relies on it
+    if (!preferredSlot || !preferredSlot.includes(" - ")) {
+      return res.status(400).json({ message: `Invalid preferredSlot format. Got: ${preferredSlot}` });
     }
 
     // --- Time and Slot Calculation ---
@@ -108,6 +157,7 @@ router.post("/opd/:hospitalId", async (req, res) => {
     }
 
     const earliestTimeFromNow = currentTimeInMinutes + 20;
+    
     let appointmentTimeInMinutes = Math.max(nextSequentialTime, earliestTimeFromNow);
     appointmentTimeInMinutes = Math.max(appointmentTimeInMinutes, start);
 
@@ -127,14 +177,20 @@ router.post("/opd/:hospitalId", async (req, res) => {
     );
 
     const newOpdEntry = new opdModel({
-      ...req.body,
+      fullName, // Use the variables from req.body (or sanitized versions)
+      age: req.body.age,
+      gender: req.body.gender,
+      contactNumber, // Uses the CLEANED number
+      email, 
+      address: req.body.address,
+      symptoms: req.body.symptoms,
       hospitalId: new mongoose.Types.ObjectId(hospitalId),
       appointmentNumber: counter.seq,
       appointmentDate: localDate,
       assignedDoctor: selectedDoctor || null, 
       appointmentTime: appointmentTimeStr,
       preferredSlot: `${startStr} - ${endStr}`,
-      assignedDoctor: selectedDoctor || null,
+      selectedDoctor: selectedDoctor || null,
     });
 
     await newOpdEntry.save();
@@ -146,11 +202,9 @@ router.post("/opd/:hospitalId", async (req, res) => {
     );
 
     // ============================================================
-    // ✅ UPDATED NOTIFICATION LOGIC (Email OR SMS)
+    // ✅ NOTIFICATION LOGIC (Email OR SMS)
     // ============================================================
     
-    // LOGIC: If Email is present, send Email. 
-    // ONLY if Email is NOT present, proceed to send SMS.
     if (email) {
       // 1. If Email exists -> Send Brevo Email
       try {
@@ -166,6 +220,7 @@ router.post("/opd/:hospitalId", async (req, res) => {
       }
     } else if (contactNumber) {
       // 2. If NO Email but Contact Number exists -> Send SMS via Fast2SMS
+      // We use the 'cleaned' contactNumber which only has digits
       try {
         const message = `Dear ${fullName}, Appt Confirmed! Date: ${localDate}, Time: ${appointmentTimeStr}, Token: ${counter.seq}.`;
         
@@ -176,11 +231,11 @@ router.post("/opd/:hospitalId", async (req, res) => {
             params: {
                 "message": message,
                 "language": "english",
-                "route": "q", // 'q' = Quick SMS route (Best for alerts)
-                "numbers": contactNumber.toString()
+                "route": "q", // 'q' = Quick SMS route
+                "numbers": contactNumber.toString() 
             }
         });
-        console.log("Confirmation SMS sent via Fast2SMS.");
+        console.log(`Confirmation SMS sent via Fast2SMS to ${contactNumber}.`);
       } catch (smsError) {
         console.error("Error sending SMS:", smsError.message);
       }
