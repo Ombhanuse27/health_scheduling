@@ -102,7 +102,11 @@ router.post("/webhook", async (req, res) => {
   const outputContexts = req.body.queryResult.outputContexts || [];
   const session = req.body.session;
 
+    console.log("------------------------------------------------");
   console.log(`AI Webhook: Action=${action}`);
+  console.log(`User said: "${queryText}"`); // <--- THIS WILL SHOW IN LOGS
+  console.log("Parameters:", JSON.stringify(params, null, 2));
+  console.log("------------------------------------------------");
 
   if (action === "handle-booking-logic") {
     try {
