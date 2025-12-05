@@ -2,25 +2,25 @@ const express = require("express");
 const mongoose = require("mongoose");
 const opdModel = require("../model/opdModel");
 const Counter = require("../model/counterModel");
-
 const Admin = require("../model/adminModel");
 const authMiddleware = require("../middleware/authMiddleware");
+const axios = require("axios"); // ✅ ADDED: Required for Fast2SMS
 require("dotenv").config();
-// ⛔️ REMOVED: const nodemailer = require("nodemailer");
-// ✅ ADDED: Brevo SDK
+
+// ✅ Brevo SDK
 const brevo = require("@getbrevo/brevo");
 
 const router = express.Router();
 
-// ✅ ADDED: Brevo API setup
+// ✅ Brevo API setup
 let apiInstance = new brevo.TransactionalEmailsApi();
 apiInstance.setApiKey(
   brevo.TransactionalEmailsApiApiKeys.apiKey,
-  process.env.BREVO_API_KEY // Make sure this is set in Render
+  process.env.BREVO_API_KEY
 );
 
-// ⛔️ REMOVED: Nodemailer transporter
-// const transporter = nodemailer.createTransport({ ... });
+// ✅ Fast2SMS API Key
+const FAST2SMS_API_KEY = "9OgY26Jj0QSCKr7iEqLGpbcRlFHTMeuw4BZxovU3Xtdy1Df5zANSqMjBkLDVHGJ8egTErwit3xOcXCvl";
 
 // ✅ Converts time string to minutes
 const toMinutes = (time) => {
@@ -61,16 +61,14 @@ const formatTime = (minutes) => {
   return `${hours}:${mins} ${period}`;
 };
 
-// Helper functions (toMinutes, parseSlotTime, formatTime) remain the same.
-
+// --- POST: Book Appointment ---
 router.post("/opd/:hospitalId", async (req, res) => {
   console.log(req.body);
 
   try {
     const { hospitalId } = req.params;
-    const { fullName, contactNumber, email, preferredSlot,selectedDoctor } = req.body;
+    const { fullName, contactNumber, email, preferredSlot, selectedDoctor } = req.body;
 
-    // ... (Validation, Time Calculation, and Database logic remains unchanged) ...
     // --- Validation ---
     if (!mongoose.Types.ObjectId.isValid(hospitalId)) {
       return res.status(400).json({ error: "Invalid Hospital ID" });
@@ -79,21 +77,18 @@ router.post("/opd/:hospitalId", async (req, res) => {
       return res.status(400).json({ message: "Invalid preferredSlot format." });
     }
 
-    // --- Time and Slot Calculation (Performed BEFORE database writes) ---
+    // --- Time and Slot Calculation ---
     const { start, end, startStr, endStr } = parseSlotTime(preferredSlot);
 
-    // ✅ FIX: Create a date object specifically for the "Asia/Kolkata" timezone.
+    // Get today's date in IST
     const now = new Date();
     const today = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-    
-    // This date is now correctly based on Indian Standard Time
     const localDate = today.toLocaleDateString("en-CA"); // YYYY-MM-DD format
 
-    // This calculation will now use the correct local time in minutes
     const currentTimeInMinutes = today.getHours() * 60 + today.getMinutes();
     console.log(`Current time in minutes (IST): ${currentTimeInMinutes}`);
 
-    // Find existing appointments to determine the next sequential slot.
+    // Check availability
     const existingAppointments = await opdModel
       .find({
         hospitalId,
@@ -102,8 +97,7 @@ router.post("/opd/:hospitalId", async (req, res) => {
       })
       .sort({ appointmentTime: 1 });
 
-    // --- Determine the next available time ---
-    let nextSequentialTime = start; // Default to the start of the slot.
+    let nextSequentialTime = start;
     if (existingAppointments.length > 0) {
       const lastAppointment = existingAppointments[existingAppointments.length - 1];
       const lastAppointmentTimeInMinutes = toMinutes(lastAppointment.appointmentTime);
@@ -114,14 +108,9 @@ router.post("/opd/:hospitalId", async (req, res) => {
     }
 
     const earliestTimeFromNow = currentTimeInMinutes + 20;
-    
-    // The final appointment time is the LATER of the two possibilities.
     let appointmentTimeInMinutes = Math.max(nextSequentialTime, earliestTimeFromNow);
-
-    // Also ensure the appointment doesn't start before the slot officially begins.
     appointmentTimeInMinutes = Math.max(appointmentTimeInMinutes, start);
 
-    // --- Final Check and Database Write ---
     if (appointmentTimeInMinutes >= end) {
       return res.status(400).json({
         message: `Sorry, no available slots in the ${preferredSlot} timeframe. Please try a later slot.`,
@@ -130,7 +119,7 @@ router.post("/opd/:hospitalId", async (req, res) => {
 
     const appointmentTimeStr = formatTime(appointmentTimeInMinutes);
 
-    // Get the next appointment number
+    // Get next appointment number
     const counter = await Counter.findOneAndUpdate(
       { name: "appointmentNumber" },
       { $inc: { seq: 1 } },
@@ -145,7 +134,7 @@ router.post("/opd/:hospitalId", async (req, res) => {
       assignedDoctor: selectedDoctor || null, 
       appointmentTime: appointmentTimeStr,
       preferredSlot: `${startStr} - ${endStr}`,
-      assignedDoctor:selectedDoctor || null,
+      assignedDoctor: selectedDoctor || null,
     });
 
     await newOpdEntry.save();
@@ -156,20 +145,44 @@ router.post("/opd/:hospitalId", async (req, res) => {
       { new: true }
     );
 
-    // --- ✅ CHANGED: Send Confirmation Email via Brevo API ---
+    // ============================================================
+    // ✅ UPDATED NOTIFICATION LOGIC (Email OR SMS)
+    // ============================================================
+    
+    // LOGIC: If Email is present, send Email. 
+    // ONLY if Email is NOT present, proceed to send SMS.
     if (email) {
+      // 1. If Email exists -> Send Brevo Email
       try {
         await apiInstance.sendTransacEmail({
           sender: { email: process.env.EMAIL_FROM },
           to: [{ email: email, name: fullName }],
           subject: "Appointment Confirmation",
-          // Use textContent for plain text.
           textContent: `Dear ${fullName},\n\nYour appointment is confirmed:\n📅 Date: ${localDate}\n🕒 Time: ${appointmentTimeStr}\n🔢 Appointment Number: ${counter.seq}\n\nThank you for choosing our service.`,
         });
-        console.log("Appointment confirmation email sent successfully via Brevo API.");
+        console.log("Confirmation Email sent via Brevo.");
       } catch (emailError) {
-        console.error("Error sending confirmation email:", emailError);
-        // Do not stop the main function, just log the error
+        console.error("Error sending Email:", emailError);
+      }
+    } else if (contactNumber) {
+      // 2. If NO Email but Contact Number exists -> Send SMS via Fast2SMS
+      try {
+        const message = `Dear ${fullName}, Appt Confirmed! Date: ${localDate}, Time: ${appointmentTimeStr}, Token: ${counter.seq}.`;
+        
+        await axios.get("https://www.fast2sms.com/dev/bulkV2", {
+            headers: {
+                "authorization": FAST2SMS_API_KEY
+            },
+            params: {
+                "message": message,
+                "language": "english",
+                "route": "q", // 'q' = Quick SMS route (Best for alerts)
+                "numbers": contactNumber.toString()
+            }
+        });
+        console.log("Confirmation SMS sent via Fast2SMS.");
+      } catch (smsError) {
+        console.error("Error sending SMS:", smsError.message);
       }
     }
 
@@ -183,18 +196,14 @@ router.post("/opd/:hospitalId", async (req, res) => {
   }
 });
 
-// ... (all other routes: /checkDuplicate, /dashboard, /doctor/opd, etc. remain unchanged) ...
-
 router.post("/checkDuplicate", async (req, res) => {
   const { fullName, hospitalId } = req.body;
 
   try {
-    // ✅ Get today's date in IST
     const now = new Date();
     const todayIST = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-    const todayDate = todayIST.toISOString().split("T")[0]; // Format: "YYYY-MM-DD"
+    const todayDate = todayIST.toISOString().split("T")[0]; 
 
-    // ✅ Check if same name already booked today in same hospital
     const existingEntry = await opdModel.findOne({
       fullName,
       hospitalId,
@@ -215,22 +224,17 @@ router.post("/checkDuplicate", async (req, res) => {
   }
 });
 
-
-
 // Get all OPD records for Admin
 router.get("/dashboard", authMiddleware, async (req, res) => {
   try {
     console.log("Request received at /dashboard");
-    const adminId = req.user.id; // Authenticated Admin ID
+    const adminId = req.user.id; 
 
-    // Validate admin ID
     if (!mongoose.Types.ObjectId.isValid(adminId)) {
       return res.status(400).json({ error: "Invalid Admin ID" });
     }
 
-    // Fetch OPD records linked to this admin's hospital
     const opdRecords = await opdModel.find({ hospitalId: adminId });
-
     res.json(opdRecords);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -240,10 +244,7 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
 router.get("/doctor/opd", authMiddleware, async (req, res) => {
   try {
     const doctorId = req.user.id;
-
-    // Fetch OPD records assigned to this doctor
     const opdRecords = await opdModel.find({ "assignedDoctor": doctorId });
-
     res.json(opdRecords);
   } catch (error) {
     console.error("Error in /doctor/opd:", error);
@@ -251,9 +252,8 @@ router.get("/doctor/opd", authMiddleware, async (req, res) => {
   }
 });
 
-
 // Delete OPD Record by ID
-router.delete("/opd/:id",authMiddleware,async (req, res) => {
+router.delete("/opd/:id", authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const deletedRecord = await opdModel.findByIdAndDelete(id);
@@ -270,15 +270,14 @@ router.delete("/opd/:id",authMiddleware,async (req, res) => {
 });
 
 router.put("/opd/:id/prescription", async (req, res) => {
-  // Destructure the new request body
   const { base64Data, contentType, diagnosis, medication, advice } = req.body;
   try {
     const updated = await opdModel.findByIdAndUpdate(
       req.params.id,
       {
         prescriptionPdf: {
-          data: base64Data, // Save base64 data
-          contentType: contentType, // Save the content type
+          data: base64Data, 
+          contentType: contentType, 
         },
         diagnosis,
         medication,
