@@ -4,44 +4,39 @@ const opdModel = require("../model/opdModel");
 const Counter = require("../model/counterModel");
 const Admin = require("../model/adminModel");
 const authMiddleware = require("../middleware/authMiddleware");
-const axios = require("axios"); // Required for Fast2SMS
+const axios = require("axios"); 
 require("dotenv").config();
 
-// ✅ Brevo SDK
 const brevo = require("@getbrevo/brevo");
-
 const router = express.Router();
 
-// ✅ Brevo API setup
 let apiInstance = new brevo.TransactionalEmailsApi();
 apiInstance.setApiKey(
   brevo.TransactionalEmailsApiApiKeys.apiKey,
   process.env.BREVO_API_KEY
 );
 
-// ✅ Fast2SMS API Key (Ideally, put this in your .env file)
 const FAST2SMS_API_KEY = "9OgY26Jj0QSCKr7iEqLGpbcRlFHTMeuw4BZxovU3Xtdy1Df5zANSqMjBkLDVHGJ8egTErwit3xOcXCvl";
 
 // ====================================================================
 // --- HELPER FUNCTIONS ---
 // ====================================================================
 
-// ✅ HELPER: Clean Phone Number (Removes hyphens, dots, spaces)
+// ✅ HELPER: Clean Phone Number
 const cleanPhoneNumber = (raw) => {
   if (!raw) return "";
-  // Removes everything that is NOT a digit (0-9)
   return raw.toString().replace(/\D/g, ""); 
 };
 
-// ✅ HELPER: Clean Time Slot (Fixes "to" and "p.m.")
+// ✅ HELPER: Clean Time Slot (Fixed Spacing Bug)
 const cleanTimeSlot = (raw) => {
   if (!raw) return "";
   let clean = raw.toString().toLowerCase();
   
-  // Replace " to " with " - " (Common AI mistake)
+  // Replace " to " with " - "
   clean = clean.replace(/\s+to\s+/g, " - ");
   
-  // Fix p.m. / a.m. (Remove dots, standardize spacing)
+  // Fix p.m. / a.m.
   clean = clean.replace(/p\.?m\.?/g, " PM").replace(/a\.?m\.?/g, " AM");
   
   // Ensure hyphen has spaces around it
@@ -49,14 +44,15 @@ const cleanTimeSlot = (raw) => {
     clean = clean.replace("-", " - ");
   }
   
-  return clean.toUpperCase(); // Ensure AM/PM are uppercase
+  // ✅ FIX: Remove double spaces and trim
+  return clean.replace(/\s+/g, " ").toUpperCase().trim();
 };
 
-// Converts time string to minutes
+// ✅ UPDATED: Flexible Regex for Time Parsing
 const toMinutes = (time) => {
   if (!time || typeof time !== "string") return NaN;
-
-  const match = time.match(/^(\d{1,2}):(\d{2})\s?(AM|PM)$/i);
+  // Use \s* to allow 0 or more spaces between time and AM/PM
+  const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
   if (!match) return NaN;
 
   let hour = parseInt(match[1]);
@@ -69,25 +65,20 @@ const toMinutes = (time) => {
   return hour * 60 + minute;
 };
 
-// Parses slot times correctly
 const parseSlotTime = (slot) => {
   if (!slot || typeof slot !== "string" || !slot.includes(" - ")) {
     throw new Error(`Invalid slot format: ${slot}`);
   }
-
   const [startStr, endStr] = slot.split(" - ").map((s) => s.trim());
   return { start: toMinutes(startStr), end: toMinutes(endStr), startStr, endStr };
 };
 
-// Converts minutes back to time string
 const formatTime = (minutes) => {
   if (isNaN(minutes) || minutes < 0) return "Invalid Time";
-
   let hours = Math.floor(minutes / 60);
-  let mins = String(minutes % 60).padStart(2, "0"); // Two-digit minutes
+  let mins = String(minutes % 60).padStart(2, "0"); 
   let period = hours >= 12 ? "PM" : "AM";
-  hours = hours % 12 || 12; // Convert 0 to 12 for 12 AM, 12 PM remains 12
-
+  hours = hours % 12 || 12; 
   return `${hours}:${mins} ${period}`;
 };
 
@@ -95,37 +86,28 @@ const formatTime = (minutes) => {
 // --- ROUTES ---
 // ====================================================================
 
-// --- POST: Book Appointment ---
 router.post("/opd/:hospitalId", async (req, res) => {
   console.log("Raw Body Received:", req.body);
 
   try {
     const { hospitalId } = req.params;
-    // Use 'let' because we sanitize inputs
     let { fullName, contactNumber, email, preferredSlot, selectedDoctor } = req.body;
 
-    // --- 1. DATA SANITIZATION (Fixing AI inputs) ---
-    if (contactNumber) {
-        contactNumber = cleanPhoneNumber(contactNumber);
-    }
-    
-    if (preferredSlot) {
-        preferredSlot = cleanTimeSlot(preferredSlot);
-    }
+    // --- 1. DATA SANITIZATION ---
+    if (contactNumber) contactNumber = cleanPhoneNumber(contactNumber);
+    if (preferredSlot) preferredSlot = cleanTimeSlot(preferredSlot);
 
-    console.log("Cleaned Data used for Booking:", { contactNumber, preferredSlot });
+    console.log("Cleaned Data:", { contactNumber, preferredSlot });
 
     // --- Validation ---
     if (!mongoose.Types.ObjectId.isValid(hospitalId)) {
       return res.status(400).json({ error: "Invalid Hospital ID" });
     }
-    // Check format specifically
     if (!preferredSlot || !preferredSlot.includes(" - ")) {
       return res.status(400).json({ message: `Invalid preferredSlot format. Got: ${preferredSlot}` });
     }
 
     // --- Time and Slot Calculation ---
-    // Wrapped in its own try/catch to handle parsing errors gracefully
     let start, end, startStr, endStr;
     try {
         const parsed = parseSlotTime(preferredSlot);
@@ -133,17 +115,22 @@ router.post("/opd/:hospitalId", async (req, res) => {
         end = parsed.end;
         startStr = parsed.startStr;
         endStr = parsed.endStr;
+        
+        // ✅ FIX: Guard against NaN (Invalid Time)
+        if (isNaN(start) || isNaN(end)) {
+             throw new Error("Time parsing failed");
+        }
     } catch (parseError) {
-        return res.status(400).json({ message: "Could not parse time slot. Please try again." });
+        console.error("Time Parse Error:", parseError);
+        return res.status(400).json({ message: "Could not understand the time slot format. Please try again." });
     }
 
-    // Get today's date in IST
     const now = new Date();
     const today = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-    const localDate = today.toLocaleDateString("en-CA"); // YYYY-MM-DD format
-
+    const localDate = today.toLocaleDateString("en-CA");
     const currentTimeInMinutes = today.getHours() * 60 + today.getMinutes();
-    console.log(`Current time in minutes (IST): ${currentTimeInMinutes}`);
+
+    console.log(`Time Debug: Current=${currentTimeInMinutes}, Start=${start}, End=${end}`);
 
     // Check availability
     const existingAppointments = await opdModel
@@ -157,16 +144,12 @@ router.post("/opd/:hospitalId", async (req, res) => {
     let nextSequentialTime = start;
     if (existingAppointments.length > 0) {
       const lastAppointment = existingAppointments[existingAppointments.length - 1];
-      const lastAppointmentTimeInMinutes = toMinutes(lastAppointment.appointmentTime);
-
-      if (!isNaN(lastAppointmentTimeInMinutes)) {
-        nextSequentialTime = lastAppointmentTimeInMinutes + 20;
-      }
+      const lastMinutes = toMinutes(lastAppointment.appointmentTime);
+      if (!isNaN(lastMinutes)) nextSequentialTime = lastMinutes + 20;
     }
 
-    const earliestTimeFromNow = currentTimeInMinutes + 20;
-    
-    let appointmentTimeInMinutes = Math.max(nextSequentialTime, earliestTimeFromNow);
+    // Logic: Time must be later than (Now + 20 mins) AND later than (Slot Start)
+    let appointmentTimeInMinutes = Math.max(nextSequentialTime, currentTimeInMinutes + 20);
     appointmentTimeInMinutes = Math.max(appointmentTimeInMinutes, start);
 
     if (appointmentTimeInMinutes >= end) {
@@ -176,19 +159,20 @@ router.post("/opd/:hospitalId", async (req, res) => {
     }
 
     const appointmentTimeStr = formatTime(appointmentTimeInMinutes);
+    
+    if (appointmentTimeStr === "Invalid Time") {
+        return res.status(400).json({ message: "Error calculating appointment time." });
+    }
 
-    // Get next appointment number
     const counter = await Counter.findOneAndUpdate(
-      { name: "appointmentNumber" },
-      { $inc: { seq: 1 } },
-      { new: true, upsert: true }
+      { name: "appointmentNumber" }, { $inc: { seq: 1 } }, { new: true, upsert: true }
     );
 
     const newOpdEntry = new opdModel({
       fullName, 
       age: req.body.age,
       gender: req.body.gender,
-      contactNumber, // Uses the CLEANED number
+      contactNumber, 
       email, 
       address: req.body.address,
       symptoms: req.body.symptoms,
@@ -202,50 +186,25 @@ router.post("/opd/:hospitalId", async (req, res) => {
     });
 
     await newOpdEntry.save();
+    await Admin.findByIdAndUpdate(hospitalId, { $push: { opdForms: newOpdEntry._id } }, { new: true });
 
-    await Admin.findByIdAndUpdate(
-      hospitalId,
-      { $push: { opdForms: newOpdEntry._id } },
-      { new: true }
-    );
+    // --- NOTIFICATIONS (Fire & Forget) ---
+    const emailData = {
+        sender: { email: process.env.EMAIL_FROM },
+        to: [{ email: email, name: fullName }],
+        subject: "Appointment Confirmation",
+        textContent: `Dear ${fullName},\n\nConfirmed: ${localDate} at ${appointmentTimeStr}. Token: ${counter.seq}.`
+    };
 
-    // ============================================================
-    // ✅ NOTIFICATION LOGIC (Email OR SMS)
-    // ============================================================
-    // "Fire and Forget": We do not await these promises.
-    // This prevents the Voice Agent call from timing out.
-    
     if (email) {
-      // 1. If Email exists -> Send Brevo Email
-      apiInstance.sendTransacEmail({
-          sender: { email: process.env.EMAIL_FROM },
-          to: [{ email: email, name: fullName }],
-          subject: "Appointment Confirmation",
-          textContent: `Dear ${fullName},\n\nYour appointment is confirmed:\n📅 Date: ${localDate}\n🕒 Time: ${appointmentTimeStr}\n🔢 Appointment Number: ${counter.seq}\n\nThank you for choosing our service.`,
-      })
-      .then(() => console.log(`✅ Email sent to ${email}`))
-      .catch((err) => console.error("❌ Error sending Email:", err));
-
+      apiInstance.sendTransacEmail(emailData).catch(e => console.error("Email fail:", e));
     } else if (contactNumber) {
-      // 2. If NO Email but Contact Number exists -> Send SMS via Fast2SMS
-      const message = `Dear ${fullName}, Appt Confirmed! Date: ${localDate}, Time: ${appointmentTimeStr}, Token: ${counter.seq}.`;
-      
       axios.get("https://www.fast2sms.com/dev/bulkV2", {
-          headers: {
-              "authorization": FAST2SMS_API_KEY
-          },
-          params: {
-              "message": message,
-              "language": "english",
-              "route": "q", // 'q' = Quick SMS route
-              "numbers": contactNumber.toString() 
-          }
-      })
-      .then(() => console.log(`✅ SMS sent to ${contactNumber}`))
-      .catch((err) => console.error("❌ Error sending SMS:", err.message));
+        headers: { "authorization": FAST2SMS_API_KEY },
+        params: { message: emailData.textContent, language: "english", route: "q", numbers: contactNumber }
+      }).catch(e => console.error("SMS fail:", e.message));
     }
 
-    // Return Success immediately to the client/AI
     res.status(201).json({
       message: `Appointment booked successfully at ${appointmentTimeStr}`,
       appointment: newOpdEntry,
@@ -253,49 +212,35 @@ router.post("/opd/:hospitalId", async (req, res) => {
 
   } catch (error) {
     console.error("Error booking appointment:", error);
-    // Send specific error message if available, otherwise generic
-    res.status(500).json({ error: error.message || "An internal server error occurred." });
+    res.status(500).json({ error: error.message || "Server Error" });
   }
 });
 
+// ... [Keep all other routes (checkDuplicate, dashboard, etc.) unchanged] ...
+// (Paste the rest of your file here: checkDuplicate, dashboard, doctor/opd, delete, put)
+
 router.post("/checkDuplicate", async (req, res) => {
   const { fullName, hospitalId } = req.body;
-
   try {
     const now = new Date();
     const todayIST = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
     const todayDate = todayIST.toISOString().split("T")[0]; 
-
-    const existingEntry = await opdModel.findOne({
-      fullName,
-      hospitalId,
-      appointmentDate: todayDate,
-    });
-
+    const existingEntry = await opdModel.findOne({ fullName, hospitalId, appointmentDate: todayDate });
     if (existingEntry) {
-      return res.status(200).json({
-        exists: true,
-        message: "This patient already has an appointment today in this hospital.",
-      });
+      return res.status(200).json({ exists: true, message: "This patient already has an appointment today." });
     } else {
       return res.status(200).json({ exists: false });
     }
   } catch (error) {
     console.error("Error checking duplicates:", error);
-    return res.status(500).json({ error: "Server error while checking duplicates." });
+    return res.status(500).json({ error: "Server error." });
   }
 });
 
-// Get all OPD records for Admin
 router.get("/dashboard", authMiddleware, async (req, res) => {
   try {
-    console.log("Request received at /dashboard");
     const adminId = req.user.id; 
-
-    if (!mongoose.Types.ObjectId.isValid(adminId)) {
-      return res.status(400).json({ error: "Invalid Admin ID" });
-    }
-
+    if (!mongoose.Types.ObjectId.isValid(adminId)) return res.status(400).json({ error: "Invalid Admin ID" });
     const opdRecords = await opdModel.find({ hospitalId: adminId });
     res.json(opdRecords);
   } catch (error) {
@@ -309,24 +254,16 @@ router.get("/doctor/opd", authMiddleware, async (req, res) => {
     const opdRecords = await opdModel.find({ "assignedDoctor": doctorId });
     res.json(opdRecords);
   } catch (error) {
-    console.error("Error in /doctor/opd:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Delete OPD Record by ID
 router.delete("/opd/:id", authMiddleware, async (req, res) => {
   try {
-    const { id } = req.params;
-    const deletedRecord = await opdModel.findByIdAndDelete(id);
-
-    if (!deletedRecord) {
-      return res.status(404).json({ message: "OPD record not found" });
-    }
-
+    const deletedRecord = await opdModel.findByIdAndDelete(req.params.id);
+    if (!deletedRecord) return res.status(404).json({ message: "OPD record not found" });
     res.status(200).json({ message: "OPD record deleted successfully" });
   } catch (error) {
-    console.error("Error deleting OPD record:", error.message);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -336,20 +273,11 @@ router.put("/opd/:id/prescription", async (req, res) => {
   try {
     const updated = await opdModel.findByIdAndUpdate(
       req.params.id,
-      {
-        prescriptionPdf: {
-          data: base64Data, 
-          contentType: contentType, 
-        },
-        diagnosis,
-        medication,
-        advice,
-      },
+      { prescriptionPdf: { data: base64Data, contentType }, diagnosis, medication, advice },
       { new: true }
     );
     res.json({ message: "Prescription saved", data: updated });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: "Failed to save prescription" });
   }
 });
