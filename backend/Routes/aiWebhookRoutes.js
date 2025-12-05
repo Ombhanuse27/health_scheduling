@@ -214,7 +214,7 @@ router.post("/webhook", async (req, res) => {
         let speech = "";
         try {
           const response = await axios.post(
-            `${process.env.RENDER_EXTERNAL_URL}/opd/${HOSPITAL_ID}`,
+            `${process.env.RENDER_EXTERNAL_URL}/api/opd/${HOSPITAL_ID}`,
             formData
           );
           speech = response.data.message + ". Thank you. Goodbye.";
