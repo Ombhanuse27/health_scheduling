@@ -22,6 +22,12 @@ const HospitalInfo = () => {
     numberOfBeds: "",
     accreditations: "",
     website: "",
+    // --- NEW FIELDS ADDED ---
+    opdFees: "",
+    paymentMode: "",
+    facilities: "", // e.g. "X-Ray, Pharmacy, Wheelchair"
+    insuranceAccepted: "", // e.g. "HDFC, Star Health, CGHS"
+    experience: "", // e.g. "15 Years"
   });
 
   const [loading, setLoading] = useState(true);
@@ -107,7 +113,7 @@ const HospitalInfo = () => {
 
   const getInputType = (key) => {
     if (key === "email") return "email";
-    if (key === "numberOfBeds") return "number";
+    if (key === "numberOfBeds" || key === "opdFees") return "number";
     if (key === "website") return "url";
     return "text";
   };
@@ -165,12 +171,12 @@ const HospitalInfo = () => {
                     {key.replace(/([A-Z])/g, " $1").trim()}
                   </label>
                   
-                  {key === "aboutHospital" ? (
+                  {key === "aboutHospital" || key === "facilities" || key === "insuranceAccepted" ? (
                     <textarea
                       name={key}
                       value={formData[key] || ""}
                       onChange={handleChange}
-                      rows={4}
+                      rows={3}
                       placeholder={`Enter ${key.replace(/([A-Z])/g, " $1").trim()}`}
                       className="w-full text-lg px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 bg-gray-50 dark:bg-neutral-700 text-gray-900 dark:text-white"
                     />

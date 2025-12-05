@@ -68,6 +68,48 @@ router.post('/addDoctors', async (req, res) => {
 });
 
 
+// In your server/routes/doctorRoutes.js
+
+// ... imports and existing code ...
+
+// ✅ GET: Get Logged-in Doctor Details
+router.get('/doctorme', authMiddleware, async (req, res) => {
+    try {
+        // req.user.id comes from the authMiddleware
+        const doctor = await Doctor.findById(req.user.id).populate('hospital');
+        if (!doctor) {
+            return res.status(404).json({ message: "Doctor not found" });
+        }
+        res.json(doctor);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching profile", error: error.message });
+    }
+});
+
+// ✅ PUT: Update Logged-in Doctor Details
+router.put('/updateProfile', authMiddleware, async (req, res) => {
+    try {
+        const updates = req.body;
+        
+        // Prevent updating sensitive fields directly through this route if needed
+        // delete updates.password; 
+        // delete updates.username;
+
+        const doctor = await Doctor.findByIdAndUpdate(
+            req.user.id,
+            { $set: updates },
+            { new: true, runValidators: true }
+        );
+
+        res.json({ message: "Profile updated successfully", doctor });
+    } catch (error) {
+        res.status(500).json({ message: "Error updating profile", error: error.message });
+    }
+});
+
+module.exports = router;
+
+
 // Get all doctors
 router.get('/getDoctors', async (req, res) => {
     try {

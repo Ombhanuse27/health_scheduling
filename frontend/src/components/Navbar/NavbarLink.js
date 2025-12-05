@@ -40,16 +40,23 @@ function NavbarLink() {
 
   const closeMenu = () => setIsOpen(false);
 
-  // Reusable class for all navigation links
-  const navLinkClass = "nav-link text-base font-medium text-gray-700 hover:text-blue-600 transition duration-300 ease-in-out px-3 py-2 rounded-md";
-  const buttonClass = "px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 transition duration-300 ease-in-out font-medium";
+  // --- IMPROVED UI CLASSES ---
+  
+// Changed text color to 'text-gray-700' for better contrast/readability
+  const navLinkClass = "nav-link text-lg font-medium text-gray-700 hover:text-blue-700 px-4 py-2 rounded-full hover:bg-blue-50 transition-all duration-300 ease-in-out";
+  
+  // UPDATED: Added 'text-lg' to the button as well
+  const buttonClass = "px-6 py-2 text-lg text-white bg-gradient-to-r from-blue-600 to-blue-500 rounded-full hover:from-blue-700 hover:to-blue-600 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 font-medium tracking-wide";
 
+  // UPDATED: Added 'text-lg' to logout
+  const logoutClass = "text-lg text-red-500 hover:text-red-700 hover:bg-red-50 font-medium px-4 py-2 rounded-full transition-all duration-300 ease-in-out";
+  
   const renderNavLinks = () => {
     if (userRole === 'admin') {
       return (
         <>
           <Link to="/hospitalsidebar" className={navLinkClass} onClick={closeMenu}>Admin Dashboard</Link>
-          <button onClick={handleLogout} className="text-red-600 hover:text-red-700 font-semibold transition duration-300 ease-in-out px-3 py-2 rounded-md">
+          <button onClick={handleLogout} className={logoutClass}>
             Logout
           </button>
         </>
@@ -58,7 +65,7 @@ function NavbarLink() {
       return (
         <>
           <Link to="/doctorsidebar" className={navLinkClass} onClick={closeMenu}>Doctor Dashboard</Link>
-          <button onClick={handleLogout} className="text-red-600 hover:text-red-700 font-semibold transition duration-300 ease-in-out px-3 py-2 rounded-md">
+          <button onClick={handleLogout} className={logoutClass}>
             Logout
           </button>
         </>
@@ -71,27 +78,51 @@ function NavbarLink() {
   };
 
   return (
-    <Navbar bg="white" expand="lg" className='fixed top-0 left-0 w-full z-50 shadow-lg py-2'>
-      <Container fluid className='max-w-screen-xl mx-auto px-4 flex items-center justify-between'>
-        <Navbar.Brand className='mr-0 flex items-center'>
-          <Link to="/" className='flex items-center'>
-            <img id="logo-img" src={Logo} alt="Health-schedule" className='w-40 h-20 object-contain' />
+    // Added backdrop-blur and bg-white/90 for a glassmorphism effect
+    <Navbar 
+      bg="" 
+      expand="lg" 
+      className='fixed top-0 left-0 w-full z-50 shadow-md bg-white/95 backdrop-blur-md border-b border-gray-100 py-3'
+    >
+      <Container fluid className='max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between'>
+        
+        {/* Brand / Logo */}
+        <Navbar.Brand className='mr-0 flex items-center p-0'>
+          <Link to="/" className='flex items-center transition-opacity hover:opacity-90'>
+            {/* Adjusted sizing for a sleeker look */}
+            <img id="logo-img" src={Logo} alt="Health-schedule" className='h-12 w-auto object-contain' />
           </Link>
         </Navbar.Brand>
+
+        {/* Mobile Toggle Button */}
         <div className='lg:hidden'>
-          <button onClick={toggleMenu} className='text-2xl focus:outline-none'>
-            <FontAwesomeIcon icon={isOpen ? faTimes : faBars} className='text-blue-600 text-3xl' />
+          <button 
+            onClick={toggleMenu} 
+            className='p-2 text-gray-600 hover:text-blue-600 focus:outline-none transition-colors'
+            aria-label="Toggle navigation"
+          >
+            <FontAwesomeIcon icon={isOpen ? faTimes : faBars} className='text-2xl' />
           </button>
         </div>
         
-        <Navbar.Collapse id="basic-navbar-nav" className={`lg:flex lg:items-center ${isOpen ? 'flex-grow justify-end' : 'hidden'}`}>
-          <Nav className='flex flex-col lg:flex-row items-center gap-2 lg:gap-8 mt-4 lg:mt-0'>
+        {/* Collapsible Menu */}
+        <Navbar.Collapse 
+          id="basic-navbar-nav" 
+          className={`lg:flex lg:items-center ${isOpen ? 'block' : 'hidden'} w-full lg:w-auto`}
+        >
+          {/* Added mt-4 for mobile spacing, removed margin on desktop */}
+          <Nav className='flex flex-col lg:flex-row items-center gap-3 lg:gap-6 mt-4 lg:mt-0 w-full justify-end'>
             <Link to="/" className={navLinkClass} onClick={closeMenu}>Home</Link>
             <Link to="/hospital" className={navLinkClass} onClick={closeMenu}>Hospitals List</Link>
             <Link to="/opdForm" className={navLinkClass} onClick={closeMenu}>Book Appointment</Link>
+            
+            {/* Divider line for mobile only to separate main links from auth actions */}
+            <div className="w-full h-px bg-gray-100 my-2 lg:hidden"></div>
+            
             {renderNavLinks()}
           </Nav>
         </Navbar.Collapse>
+
       </Container>
     </Navbar>
   );

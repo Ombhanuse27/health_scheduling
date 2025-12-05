@@ -25,6 +25,7 @@ const doctorSchema = new mongoose.Schema({
     },
   ],
   photo: { type: String }, // Store the file path or URL
+  signature: { type: String },
 });
 
 const Doctor = mongoose.model("Doctor", doctorSchema);

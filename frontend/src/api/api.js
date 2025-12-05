@@ -31,7 +31,25 @@ export const deleteOpdRecord = async (recordId, token) => {
   }
 };
 
+// ✅ Get Logged In Doctor Data
+export const getLoggedInDoctor = (token) => {
+  return axios.get(`${BASE_URL}/doctors/doctorme`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
 
+// ✅ Update Logged In Doctor Data
+export const updateDoctorInfo = async (token, data) => {
+  try {
+    const response = await axios.put(`${BASE_URL}/doctors/updateProfile`, data, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating doctor info:", error.response?.data || error.message);
+    throw error;
+  }
+};
 
 export const generateTeleconsultLink = async (appointmentId) =>
   axios.get(`${BASE_URL}/generate-link/${appointmentId}`);

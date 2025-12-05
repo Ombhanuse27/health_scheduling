@@ -21,6 +21,9 @@ const AdminSchema = new mongoose.Schema({
   accreditations: { type: String },
   website: { type: String },
   city: { type: String }, 
+  facilities: { type: String }, 
+  insuranceAccepted: { type: String },
+  experience: { type: String }
 });
 
 module.exports = mongoose.model("adminModel", AdminSchema);

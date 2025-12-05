@@ -17,6 +17,7 @@ import MegaDoctors from "../components/Doctor/MegaDoctors";
 import HospitalInfo from "../components/HospitalAdmin/HospitalInfo";
 import ourDoctors from "../components/Doctor/ourDoctors";
 import DoctorDashboard from "../components/Doctor/DoctorDashboard";
+import DoctorInfo from "../components/Doctor/DoctorInfo";
 
 
 export function HospitalSidebar() {
@@ -28,13 +29,7 @@ export function HospitalSidebar() {
         <IconBrandTabler className="text-neutral-700 dark:text-neutral-200 h-8 w-6 shrink-0" />
       ),
     },
-    {
-      label: "Doctors",
-      to: "/hospitalsidebar/doctor",
-      icon: (
-        <IconUserBolt className="text-neutral-700 dark:text-neutral-200 h-8 w-6 shrink-0" />
-      ),
-    },
+    
     {
       label: "Info",
       to: "/hospitalsidebar/info",
@@ -161,7 +156,7 @@ const Skeleton = ({ selectedLink }) => {
         );
       case "/hospitalsidebar/info":
         return (
-         <HospitalInfo  />
+         <DoctorInfo />
         );
         case "/logout":
           window.location.href = "https://health-scheduling.vercel.app/"; // ✅ Correct usage
@@ -173,9 +168,8 @@ const Skeleton = ({ selectedLink }) => {
   };
 
   return (
-    <div className="flex flex-1">
-      <div className="p-2 md:px-20 py-10 rounded-tl-2xl border border-neutral-200 dark:border-neutral-700 bg-blue-200 flex flex-col gap-2 flex-1 w-full h-full">
-      
+    <div className="flex flex-1 w-full h-full overflow-hidden">
+<div className="p-2 md:px-10 py-10 rounded-tl-2xl border border-neutral-200 dark:border-neutral-700 bg-blue-200 flex flex-col gap-2 flex-1 w-full h-full overflow-y-auto custom-scrollbar">      
         {/* {!selectedLink ? (
           <>
             <input className="h-10 w-60 rounded-lg bg-gray-100 dark:bg-neutral-800 animate-pulse ml-auto"></input>
@@ -201,7 +195,7 @@ const Skeleton = ({ selectedLink }) => {
           </>
         ) : ( */}
           
-          <div className="text-white bg-blue-200 text-xl font-bold mt-5">{renderContent()}</div>
+          <div className="text-white bg-blue-200 text-xl font-bold mt-5 w-full">{renderContent()}</div>
         {/*  )} */}
       </div>
     </div>
