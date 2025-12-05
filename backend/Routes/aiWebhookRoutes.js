@@ -99,6 +99,7 @@ router.post("/webhook", async (req, res) => {
   // Use 'queryResult' for Dialogflow ES
   const action = req.body.queryResult.action;
   const params = req.body.queryResult.parameters;
+  const queryText = req.body.queryResult.queryText;
   const outputContexts = req.body.queryResult.outputContexts || [];
   const session = req.body.session;
 
