@@ -4,7 +4,7 @@ const opdModel = require("../model/opdModel");
 const Counter = require("../model/counterModel");
 const Admin = require("../model/adminModel");
 const authMiddleware = require("../middleware/authMiddleware");
-const axios = require("axios"); // ✅ ADDED: Required for Fast2SMS
+const axios = require("axios"); // Required for Fast2SMS
 require("dotenv").config();
 
 // ✅ Brevo SDK
@@ -19,21 +19,21 @@ apiInstance.setApiKey(
   process.env.BREVO_API_KEY
 );
 
-// ✅ Fast2SMS API Key
+// ✅ Fast2SMS API Key (Ideally, put this in your .env file)
 const FAST2SMS_API_KEY = "9OgY26Jj0QSCKr7iEqLGpbcRlFHTMeuw4BZxovU3Xtdy1Df5zANSqMjBkLDVHGJ8egTErwit3xOcXCvl";
 
 // ====================================================================
 // --- HELPER FUNCTIONS ---
 // ====================================================================
 
-// ✅ NEW: Clean Phone Number (Removes hyphens, dots, spaces)
+// ✅ HELPER: Clean Phone Number (Removes hyphens, dots, spaces)
 const cleanPhoneNumber = (raw) => {
   if (!raw) return "";
   // Removes everything that is NOT a digit (0-9)
   return raw.toString().replace(/\D/g, ""); 
 };
 
-// ✅ NEW: Clean Time Slot (Fixes "to" and "p.m.")
+// ✅ HELPER: Clean Time Slot (Fixes "to" and "p.m.")
 const cleanTimeSlot = (raw) => {
   if (!raw) return "";
   let clean = raw.toString().toLowerCase();
@@ -101,16 +101,14 @@ router.post("/opd/:hospitalId", async (req, res) => {
 
   try {
     const { hospitalId } = req.params;
-    // We use 'let' because we need to modify/clean these variables
+    // Use 'let' because we sanitize inputs
     let { fullName, contactNumber, email, preferredSlot, selectedDoctor } = req.body;
 
     // --- 1. DATA SANITIZATION (Fixing AI inputs) ---
-    // Fix Phone: "775-709-8385." -> "7757098385"
     if (contactNumber) {
         contactNumber = cleanPhoneNumber(contactNumber);
     }
     
-    // Fix Slot: "6:30 p.m. to 9:30 p.m." -> "6:30 PM - 9:30 PM"
     if (preferredSlot) {
         preferredSlot = cleanTimeSlot(preferredSlot);
     }
@@ -121,13 +119,23 @@ router.post("/opd/:hospitalId", async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(hospitalId)) {
       return res.status(400).json({ error: "Invalid Hospital ID" });
     }
-    // Check for " - " specifically because our parser relies on it
+    // Check format specifically
     if (!preferredSlot || !preferredSlot.includes(" - ")) {
       return res.status(400).json({ message: `Invalid preferredSlot format. Got: ${preferredSlot}` });
     }
 
     // --- Time and Slot Calculation ---
-    const { start, end, startStr, endStr } = parseSlotTime(preferredSlot);
+    // Wrapped in its own try/catch to handle parsing errors gracefully
+    let start, end, startStr, endStr;
+    try {
+        const parsed = parseSlotTime(preferredSlot);
+        start = parsed.start;
+        end = parsed.end;
+        startStr = parsed.startStr;
+        endStr = parsed.endStr;
+    } catch (parseError) {
+        return res.status(400).json({ message: "Could not parse time slot. Please try again." });
+    }
 
     // Get today's date in IST
     const now = new Date();
@@ -177,7 +185,7 @@ router.post("/opd/:hospitalId", async (req, res) => {
     );
 
     const newOpdEntry = new opdModel({
-      fullName, // Use the variables from req.body (or sanitized versions)
+      fullName, 
       age: req.body.age,
       gender: req.body.gender,
       contactNumber, // Uses the CLEANED number
@@ -204,50 +212,49 @@ router.post("/opd/:hospitalId", async (req, res) => {
     // ============================================================
     // ✅ NOTIFICATION LOGIC (Email OR SMS)
     // ============================================================
+    // "Fire and Forget": We do not await these promises.
+    // This prevents the Voice Agent call from timing out.
     
     if (email) {
       // 1. If Email exists -> Send Brevo Email
-      try {
-        await apiInstance.sendTransacEmail({
+      apiInstance.sendTransacEmail({
           sender: { email: process.env.EMAIL_FROM },
           to: [{ email: email, name: fullName }],
           subject: "Appointment Confirmation",
           textContent: `Dear ${fullName},\n\nYour appointment is confirmed:\n📅 Date: ${localDate}\n🕒 Time: ${appointmentTimeStr}\n🔢 Appointment Number: ${counter.seq}\n\nThank you for choosing our service.`,
-        });
-        console.log("Confirmation Email sent via Brevo.");
-      } catch (emailError) {
-        console.error("Error sending Email:", emailError);
-      }
+      })
+      .then(() => console.log(`✅ Email sent to ${email}`))
+      .catch((err) => console.error("❌ Error sending Email:", err));
+
     } else if (contactNumber) {
       // 2. If NO Email but Contact Number exists -> Send SMS via Fast2SMS
-      // We use the 'cleaned' contactNumber which only has digits
-      try {
-        const message = `Dear ${fullName}, Appt Confirmed! Date: ${localDate}, Time: ${appointmentTimeStr}, Token: ${counter.seq}.`;
-        
-        await axios.get("https://www.fast2sms.com/dev/bulkV2", {
-            headers: {
-                "authorization": FAST2SMS_API_KEY
-            },
-            params: {
-                "message": message,
-                "language": "english",
-                "route": "q", // 'q' = Quick SMS route
-                "numbers": contactNumber.toString() 
-            }
-        });
-        console.log(`Confirmation SMS sent via Fast2SMS to ${contactNumber}.`);
-      } catch (smsError) {
-        console.error("Error sending SMS:", smsError.message);
-      }
+      const message = `Dear ${fullName}, Appt Confirmed! Date: ${localDate}, Time: ${appointmentTimeStr}, Token: ${counter.seq}.`;
+      
+      axios.get("https://www.fast2sms.com/dev/bulkV2", {
+          headers: {
+              "authorization": FAST2SMS_API_KEY
+          },
+          params: {
+              "message": message,
+              "language": "english",
+              "route": "q", // 'q' = Quick SMS route
+              "numbers": contactNumber.toString() 
+          }
+      })
+      .then(() => console.log(`✅ SMS sent to ${contactNumber}`))
+      .catch((err) => console.error("❌ Error sending SMS:", err.message));
     }
 
+    // Return Success immediately to the client/AI
     res.status(201).json({
       message: `Appointment booked successfully at ${appointmentTimeStr}`,
       appointment: newOpdEntry,
     });
+
   } catch (error) {
     console.error("Error booking appointment:", error);
-    res.status(500).json({ error: "An internal server error occurred." });
+    // Send specific error message if available, otherwise generic
+    res.status(500).json({ error: error.message || "An internal server error occurred." });
   }
 });
 
