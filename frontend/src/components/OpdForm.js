@@ -106,7 +106,7 @@ const OpdForm = () => {
     contactNumber: "",
     email: "",
     address: "",
-    symptoms: "",
+    diagnosis: "",
     hospitalId: "",
     hospitalName: "",
     selectedDoctor: "", // Field for selected doctor

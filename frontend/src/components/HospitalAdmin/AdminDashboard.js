@@ -1,19 +1,98 @@
 import React, { useState, useEffect } from "react";
+import { 
+  Trash2, 
+  Search, 
+  Calendar, 
+  User, 
+  Clock, 
+  Stethoscope, 
+  UserCheck, 
+  AlertCircle,
+  Filter
+} from "lucide-react";
 
-import { Trash2 } from "lucide-react";
+// ✅ Import API functions
+import { 
+  getOpdRecords, 
+  getDoctorsData, 
+  assignDoctors, 
+  getLoggedInHospital, 
+  deleteOpdRecord 
+} from "../../api/api";
 
+// --- Helper Functions (UNCHANGED) ---
 
-// ✅ Import getLoggedInHospital
-import { getOpdRecords, getDoctorsData, assignDoctors, getLoggedInHospital ,deleteOpdRecord} from "../../api/api";
+const getTodayDate = () => {
+  return new Date().toLocaleDateString("en-CA");
+};
+
+const parseTime = (timeStr) => {
+  if (!timeStr) return 0;
+  if (typeof timeStr !== 'string') return 0;
+
+  const [time, period] = timeStr.split(" ");
+  if (!time || !period) return 0;
+
+  const [hourStr, minuteStr] = time.split(":");
+  let hour = parseInt(hourStr);
+  let minute = parseInt(minuteStr);
+
+  if (period === "PM" && hour !== 12) {
+    hour += 12;
+  }
+  if (period === "AM" && hour === 12) {
+    hour = 0; // Midnight
+  }
+  return hour * 60 + minute;
+};
+
+const formatTime = (totalMinutes) => {
+  let hour = Math.floor(totalMinutes / 60);
+  let minute = totalMinutes % 60;
+  const period = hour >= 12 ? "PM" : "AM";
+
+  if (hour === 0) {
+    hour = 12; // 12 AM (Midnight)
+  } else if (hour > 12) {
+    hour -= 12;
+  }
+
+  const minuteStr = minute.toString().padStart(2, '0');
+  return `${hour}:${minuteStr} ${period}`;
+};
+
+const generateTimeSlots = (startTimeStr, endTimeStr) => {
+  if (!startTimeStr || !endTimeStr) return [];
+  
+  const startMinutes = parseTime(startTimeStr);
+  const endMinutes = parseTime(endTimeStr);
+  const slotDuration = 3 * 60; // 3 hours
+  const slots = [];
+
+  for (let currentStart = startMinutes; currentStart < endMinutes; currentStart += slotDuration) {
+    const currentEnd = currentStart + slotDuration;
+    const slotEnd = Math.min(currentEnd, endMinutes);
+
+    if (slotEnd > currentStart) {
+      slots.push(`${formatTime(currentStart)} - ${formatTime(slotEnd)}`);
+    }
+  }
+  return slots;
+};
+
+// --- Main Component ---
 
 const AdminDashboard = ({ children }) => {
   const [opdRecords, setOpdRecords] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [doctors, setDoctors] = useState([]); // This will now hold the filtered list
-
-  // ✅ Changed initial state to "" to show all records by default
-  const [selectedDate, setSelectedDate] = useState("");
+  const [doctors, setDoctors] = useState([]);
+  
+  const [selectedDate, setSelectedDate] = useState(getTodayDate());
+  const [selectedDoctorId, setSelectedDoctorId] = useState(""); 
+  const [timeSlots, setTimeSlots] = useState([]); 
+  
   const token = localStorage.getItem("token");
+  const todayStr = getTodayDate();
   
   const assignDoctorsHandler = async (record) => {
     if (!record.assignedDoctorId) {
@@ -28,64 +107,54 @@ const AdminDashboard = ({ children }) => {
       await assignDoctors(record._id, record.assignedDoctorId, token);
       alert("Appointment successfully assigned to the doctor!");
 
-      // ✅ Find the full doctor object from the state
       const assignedDoctorObject = doctors.find(doc => doc._id === record.assignedDoctorId);
 
-      // ✅ Update the local state immediately to reflect the assignment
       setOpdRecords(prevRecords =>
         prevRecords.map(r =>
           r._id === record._id
-            ? { ...r, assignedDoctor: assignedDoctorObject } // Add the doctor object to the record
+            ? { ...r, assignedDoctor: assignedDoctorObject }
             : r
         )
       );
-
     } catch (error) {
       alert("Failed to assign appointment.");
     }
   };
 
-  // ✅ Updated useEffect to fetch and filter doctors
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Step 1: Get the logged-in hospital's details to find its username
         const { data: hospitalData } = await getLoggedInHospital(token);
         if (!hospitalData || !hospitalData.username) {
           throw new Error("Could not determine the logged-in hospital.");
         }
         const hospitalUsername = hospitalData.username;
 
-        // Step 2: Fetch OPD records and all doctors in parallel
+        if (hospitalData.hospitalStartTime && hospitalData.hospitalEndTime) {
+          const slots = generateTimeSlots(hospitalData.hospitalStartTime, hospitalData.hospitalEndTime);
+          setTimeSlots(slots);
+        }
+
         const [opdResponse, allDoctorsData] = await Promise.all([
           getOpdRecords(token),
           getDoctorsData(token)
         ]);
         
         const opdData = opdResponse.data;
-        
-        // Step 3: Filter the doctors list to match the logged-in hospital's username
         const filteredDoctors = allDoctorsData.filter(doc => doc.hospital === hospitalUsername);
-        setDoctors(filteredDoctors); // Set the filtered list for the dropdown
+        setDoctors(filteredDoctors);
         
-        // ✅ CORRECTED LOGIC: Manually "populate" the assignedDoctor field for each OPD record.
-        // This connects the doctor's ID from the appointment to the full doctor details.
         const populatedOpdRecords = opdData.map(record => {
-          // Check if a doctor ID exists on the record
           if (record.assignedDoctor) { 
-            // Find the full doctor object from the complete list of doctors
             const doctorDetails = allDoctorsData.find(doc => doc._id === record.assignedDoctor);
-            // If the doctor is found, replace the ID with the full object
             if (doctorDetails) {
               return { ...record, assignedDoctor: doctorDetails };
             }
           }
-          // If no doctor is assigned or found, return the record as is
           return record;
         });
 
-        // Set the state with the populated records
         setOpdRecords(Array.isArray(populatedOpdRecords) ? populatedOpdRecords : []);
 
       } catch (error) {
@@ -101,100 +170,230 @@ const AdminDashboard = ({ children }) => {
     }
   }, [token]);
 
+  // --- Filtering Logic (UNCHANGED) ---
 
-  const uniqueDates = [...new Set(opdRecords.map((record) => record.appointmentDate))];
+  const doctorFilteredRecords = selectedDoctorId
+    ? opdRecords.filter(record => 
+        (record.assignedDoctor && record.assignedDoctor._id === selectedDoctorId) || 
+        record.assignedDoctor === selectedDoctorId
+      )
+    : opdRecords;
 
-  const parseTimeToDate = (timeStr) => {
-    return new Date(`2000-01-01T${new Date(`2000/01/01 ${timeStr}`).toTimeString().slice(0, 8)}`);
+  const uniqueDates = [...new Set(doctorFilteredRecords.map((record) => record.appointmentDate))];
+  uniqueDates.sort((a, b) => b.localeCompare(a));
+
+  const datesToShow = selectedDate 
+    ? [selectedDate] 
+    : uniqueDates;
+
+  const getRecordsForDateAndSlot = (date, slot) => {
+    const [startStr, endStr] = slot.split(" - ");
+    const slotStartMin = parseTime(startStr);
+    const slotEndMin = parseTime(endStr);
+
+    return doctorFilteredRecords.filter(record => {
+      if (record.appointmentDate !== date) return false;
+      const apptMin = parseTime(record.appointmentTime);
+      return apptMin >= slotStartMin && apptMin < slotEndMin;
+    }).sort((a, b) => parseTime(a.appointmentTime) - parseTime(b.appointmentTime));
   };
 
-  // This logic now correctly shows all records by default because selectedDate is initially ""
-  const filteredRecords = selectedDate
-    ? opdRecords
-        .filter((record) => record.appointmentDate === selectedDate)
-        .sort((a, b) => parseTimeToDate(a.appointmentTime) - parseTimeToDate(b.appointmentTime))
-    : opdRecords.sort((a, b) => parseTimeToDate(a.appointmentTime) - parseTimeToDate(b.appointmentTime));
+  const getUncategorizedRecordsForDate = (date) => {
+    if (timeSlots.length === 0) {
+        return doctorFilteredRecords.filter(r => r.appointmentDate === date);
+    }
+    
+    const allSlotRanges = timeSlots.map(slot => {
+        const [startStr, endStr] = slot.split(" - ");
+        return { start: parseTime(startStr), end: parseTime(endStr) };
+    });
+
+    return doctorFilteredRecords.filter(record => {
+        if (record.appointmentDate !== date) return false;
+        const apptMin = parseTime(record.appointmentTime);
+        const fitsInSlot = allSlotRanges.some(range => apptMin >= range.start && apptMin < range.end);
+        return !fitsInSlot;
+    }).sort((a, b) => parseTime(a.appointmentTime) - parseTime(b.appointmentTime));
+  };
 
   return (
     <div className="flex flex-1">
-      {/* ✅ Improved base layout and background color */}
-      <div className="p-4 md:p-10 bg-gray-100 dark:bg-gray-900 flex flex-col gap-4 flex-1 w-full min-h-screen">
+      {/* 🎨 UI UPDATE: 
+         - Changed background to a fresh gradient (Teal to Blue to White)
+         - Added proper scrolling behavior 
+      */}
+      <div className="p-4 md:p-10 bg-gradient-to-br from-teal-50 via-blue-50 to-white dark:from-gray-900 dark:to-gray-800 flex flex-col gap-6 flex-1 w-full h-screen overflow-y-auto">
         {loading ? (
-          // ✅ Improved loading state
-          <div className="flex flex-1 justify-center items-center">
-            <div className="animate-spin rounded-full h-20 w-20 border-t-4 border-b-4 border-red-500"></div>
+          <div className="flex flex-1 justify-center items-center flex-col gap-4">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-teal-500 shadow-lg"></div>
+            <p className="text-teal-600 font-medium animate-pulse">Loading Hospital Records...</p>
           </div>
         ) : (
-          <div className="w-full max-w-7xl mx-auto">
-            <h2 className="text-3xl md:text-5xl font-extrabold mb-6 text-red-500 text-center uppercase tracking-wide">
-              Appointment List
-            </h2>
-
-            {/* ✅ Improved controls layout for responsiveness */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 px-4 py-3 bg-white dark:bg-gray-800 rounded-lg shadow">
-              <input
-                className="h-12 w-full md:w-80 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-200 text-gray-700 px-4 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-pink-500 transition-shadow"
-                placeholder="Search records..."
-              />
-              <div className="flex items-center gap-2 w-full md:w-auto">
-                <label className="text-lg text-black dark:text-gray-200 font-semibold mr-2 shrink-0">
-                  Select Date:
-                </label>
-                <select
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="px-4 py-2 text-lg text-black dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 w-full md:w-auto"
-                >
-                  <option value="">All Dates</option>
-                  {uniqueDates.map((date) => (
-                    <option key={date} value={date}>
-                      {date}
-                    </option>
-                  ))}
-                </select>
+          <div className="w-full max-w-7xl mx-auto pb-20">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+              <div>
+                 <h2 className="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-blue-600 dark:from-teal-400 dark:to-blue-400 uppercase tracking-tight">
+                  Appointment Dashboard
+                </h2>
+                <p className="text-slate-500 dark:text-slate-400 mt-1">
+                  Manage patient appointments and doctor assignments.
+                </p>
+              </div>
+              <div className="bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-sm border border-slate-200 dark:border-slate-700 flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-slate-600 dark:text-slate-300">System Live</span>
               </div>
             </div>
 
-            {/* ✅ Responsive Table Container */}
-            <div className="w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden mt-6">
-              <table className="w-full border-collapse">
-                {/* ✅ Table head is hidden on mobile */}
-                <thead className="hidden md:table-header-group">
-                  <tr className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-left text-sm uppercase">
-                    <th className="p-4 font-semibold">Full Name</th>
-                    <th className="p-4 font-semibold">Age</th>
-                    <th className="p-4 font-semibold">Symptoms</th>
-                    <th className="p-4 font-semibold">Appt. Number</th>
-                    <th className="p-4 font-semibold">Appt. Date</th>
-                    <th className="p-4 font-semibold">Appt. Time</th>
-                    <th className="p-4 font-semibold">Assign Doctor</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-700 md:divide-none">
-                  {filteredRecords.length > 0 ? (
-                    filteredRecords.map((record) => (
-                      <AppointmentRow
-                        key={record._id}
-                        record={record}
-                        doctors={doctors}
-                        assignDoctorsHandler={assignDoctorsHandler}
-                        setOpdRecords={setOpdRecords}
-                      />
-                    ))
-                  ) : (
-                    <tr>
-                      {/* ✅ Adjusted colSpan for the stacking layout */}
-                      <td
-                        colSpan="7"
-                        className="text-center p-8 text-gray-500 dark:text-gray-400"
-                      >
-                        No records found for this date.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+            {/* 🎨 UI UPDATE: Glassmorphism Control Bar */}
+            <div className="sticky top-0 z-30 backdrop-blur-md bg-white/80 dark:bg-gray-800/90 rounded-2xl shadow-xl border border-white/20 dark:border-gray-700 p-4 mb-8 transition-all hover:shadow-2xl">
+              <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                
+                {/* Search */}
+                <div className="relative w-full md:w-1/3 group">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-5 w-5 text-slate-400 group-focus-within:text-teal-500 transition-colors" />
+                  </div>
+                  <input
+                    className="block w-full pl-10 pr-3 py-3 rounded-xl bg-slate-50 dark:bg-gray-700/50 border border-slate-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white dark:focus:bg-gray-700 transition-all shadow-inner"
+                    placeholder="Search by name or diagnosis..."
+                  />
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                  
+                  {/* Doctor Filter */}
+                  <div className="relative w-full md:w-56">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                       <Stethoscope className="h-4 w-4 text-slate-500" />
+                    </div>
+                    <select
+                        value={selectedDoctorId}
+                        onChange={(e) => setSelectedDoctorId(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 appearance-none rounded-xl bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm cursor-pointer"
+                    >
+                        <option value="">All Doctors</option>
+                        {doctors.map((doc) => (
+                            <option key={doc._id} value={doc._id}>
+                                {doc.fullName}
+                            </option>
+                        ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                       <Filter className="h-4 w-4 text-slate-400" />
+                    </div>
+                  </div>
+
+                  {/* Date Filter */}
+                  <div className="relative w-full md:w-56">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                       <Calendar className="h-4 w-4 text-slate-500" />
+                    </div>
+                    <select
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 appearance-none rounded-xl bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 shadow-sm cursor-pointer"
+                    >
+                      <option value="">All Dates</option>
+                      <option value={todayStr} className="font-bold">Today ({todayStr})</option>
+                      {uniqueDates
+                          .filter(date => date !== todayStr)
+                          .map((date) => (
+                          <option key={date} value={date}>
+                              {date}
+                          </option>
+                      ))}
+                    </select>
+                  </div>
+
+                </div>
+              </div>
             </div>
+
+            {/* ✅ MAIN RENDER LOOP */}
+            {datesToShow.length > 0 ? (
+                datesToShow.map((date) => (
+                    <div key={date} className="mb-12">
+                        
+                        {/* 🎨 UI UPDATE: Enhanced Date Header */}
+                        <div className="flex items-center gap-4 mb-6 sticky top-28 z-10 bg-gradient-to-r from-teal-50/90 to-blue-50/90 dark:from-gray-900/90 dark:to-gray-800/90 backdrop-blur-sm py-2 px-4 rounded-lg border-l-4 border-teal-500 shadow-sm">
+                            <div className="p-2 bg-teal-100 dark:bg-teal-900 rounded-lg text-teal-600 dark:text-teal-300">
+                               <Calendar size={24} />
+                            </div>
+                            <h2 className="text-2xl font-bold text-slate-800 dark:text-white tracking-tight">
+                                {date === todayStr ? <span className="text-teal-600">Today,</span> : ""} {date}
+                            </h2>
+                        </div>
+
+                        {/* Slots Grid */}
+                        <div className="flex flex-col gap-8">
+                            {timeSlots.map((slot, index) => {
+                                const recordsInSlot = getRecordsForDateAndSlot(date, slot);
+                                if (recordsInSlot.length === 0) return null; 
+
+                                return (
+                                    <div key={index} className="group w-full bg-white dark:bg-gray-800 rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden border border-slate-100 dark:border-gray-700">
+                                        {/* Slot Header */}
+                                        <div className="bg-slate-50 dark:bg-slate-700/50 px-6 py-4 border-b border-slate-100 dark:border-slate-600 flex justify-between items-center">
+                                            <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                                                <Clock className="text-teal-500" size={20} />
+                                                {slot}
+                                            </h3>
+                                            <span className="text-xs font-bold bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300 px-3 py-1 rounded-full shadow-sm">
+                                                {recordsInSlot.length} Patient{recordsInSlot.length !== 1 ? 's' : ''}
+                                            </span>
+                                        </div>
+                                        <AppointmentTable 
+                                            records={recordsInSlot} 
+                                            doctors={doctors}
+                                            assignDoctorsHandler={assignDoctorsHandler}
+                                            setOpdRecords={setOpdRecords}
+                                        />
+                                    </div>
+                                );
+                            })}
+
+                            {/* Uncategorized */}
+                            {getUncategorizedRecordsForDate(date).length > 0 && (
+                                <div className="w-full bg-white dark:bg-gray-800 rounded-2xl shadow-md overflow-hidden border-2 border-amber-100 dark:border-amber-900">
+                                    <div className="bg-amber-50 dark:bg-amber-900/20 px-6 py-4 border-b border-amber-100 dark:border-amber-800 flex items-center gap-2">
+                                         <AlertCircle className="text-amber-500" />
+                                         <h3 className="text-lg font-bold text-amber-800 dark:text-amber-200">
+                                            Unscheduled / Other Times
+                                        </h3>
+                                    </div>
+                                    <AppointmentTable 
+                                        records={getUncategorizedRecordsForDate(date)} 
+                                        doctors={doctors}
+                                        assignDoctorsHandler={assignDoctorsHandler}
+                                        setOpdRecords={setOpdRecords}
+                                    />
+                                </div>
+                            )}
+
+                             {/* Empty State for specific filter */}
+                             {getUncategorizedRecordsForDate(date).length === 0 && 
+                              timeSlots.every(slot => getRecordsForDateAndSlot(date, slot).length === 0) && (
+                                 <div className="p-8 text-center bg-white/50 rounded-xl border border-dashed border-slate-300 mx-4">
+                                    <p className="text-slate-500 italic">No appointments match the current filter for this date.</p>
+                                 </div>
+                             )}
+                        </div>
+                    </div>
+                ))
+            ) : (
+                <div className="flex flex-col items-center justify-center p-16 bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-slate-100 dark:border-gray-700 text-center">
+                    <div className="bg-slate-100 dark:bg-gray-700 p-6 rounded-full mb-4">
+                        <UserCheck size={48} className="text-slate-400" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-700 dark:text-white mb-2">No Records Found</h3>
+                    <p className="text-slate-500 dark:text-slate-400 max-w-md">
+                        There are no appointments scheduled for the selected date or doctor filter. Try adjusting your search criteria.
+                    </p>
+                </div>
+            )}
+
             {children}
           </div>
         )}
@@ -203,14 +402,42 @@ const AdminDashboard = ({ children }) => {
   );
 };
 
-// ✅ Extracted Row into its own component for clarity
+// ✅ Extracted Table
+const AppointmentTable = ({ records, doctors, assignDoctorsHandler, setOpdRecords }) => (
+    <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+            <thead className="hidden md:table-header-group">
+                <tr className="bg-white dark:bg-gray-800 text-slate-500 dark:text-slate-400 text-left text-xs uppercase tracking-wider font-semibold border-b border-slate-100 dark:border-gray-700">
+                    <th className="p-5 pl-6">Patient Details</th>
+                    <th className="p-5">diagnosis</th>
+                    <th className="p-5">Ref. No</th>
+                    <th className="p-5">Time</th> 
+                    <th className="p-5">Action / Doctor</th>
+                </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50 dark:divide-gray-700 md:divide-slate-100">
+                {records.map((record) => (
+                    <AppointmentRow
+                        key={record._id}
+                        record={record}
+                        doctors={doctors}
+                        assignDoctorsHandler={assignDoctorsHandler}
+                        setOpdRecords={setOpdRecords}
+                    />
+                ))}
+            </tbody>
+        </table>
+    </div>
+);
+
+// Row Component
 const AppointmentRow = ({
   record,
   doctors,
   assignDoctorsHandler,
   setOpdRecords,
 }) => {
-  const   token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
   const isAssigned = record.assignedDoctor && record.assignedDoctor.fullName;
 
   const handleDelete = async () => {
@@ -229,94 +456,114 @@ const AppointmentRow = ({
     }
   };
 
-  const ResponsiveCell = ({ label, children, className = "" }) => (
-    <td
-      data-label={label}
-      className={`
-        block md:table-cell p-4 md:p-3
-        text-gray-900 dark:text-gray-200 
-        text-right md:text-left
-        relative md:static
-        border-b border-gray-200 dark:border-gray-700 md:border-none
-        before:content-[attr(data-label)]
-        before:absolute before:left-4 before:text-left
-        before:font-semibold before:text-gray-600 dark:before:text-gray-400
-        md:before:content-none
-        ${className}
-      `}
-    >
-      {children}
-    </td>
-  );
-
   return (
-    <tr className="block md:table-row mb-4 md:mb-0 bg-white dark:bg-gray-800 md:hover:bg-gray-50 dark:md:hover:bg-gray-700/50 shadow-md md:shadow-none rounded-lg md:rounded-none overflow-hidden md:overflow-visible">
-      <ResponsiveCell label="Full Name">{record.fullName}</ResponsiveCell>
-      <ResponsiveCell label="Age">{record.age}</ResponsiveCell>
-      <ResponsiveCell label="Symptoms" className="whitespace-pre-wrap break-words">
-        {record.symptoms}
-      </ResponsiveCell>
-      <ResponsiveCell label="Appt. Number">
-        {record.appointmentNumber}
-      </ResponsiveCell>
-      <ResponsiveCell label="Appt. Date">
-        {record.appointmentDate}
-      </ResponsiveCell>
-      <ResponsiveCell label="Appt. Time">
-        {record.appointmentTime}
-      </ResponsiveCell>
-      <ResponsiveCell label="Assign Doctor">
+    <tr className="block md:table-row bg-white dark:bg-gray-800 hover:bg-teal-50/30 dark:hover:bg-gray-700/30 transition-colors group">
+      
+      {/* Patient Name & Age */}
+      <td className="block md:table-cell p-5 pl-6">
+        <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-400 to-teal-400 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                {record.fullName.charAt(0).toUpperCase()}
+            </div>
+            <div>
+                <p className="font-bold text-slate-800 dark:text-white text-base">{record.fullName}</p>
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <span className="flex items-center gap-1"><User size={12}/> {record.age} Yrs</span>
+                    <span>•</span>
+                    <span className="capitalize">{record.gender || 'N/A'}</span>
+                </div>
+            </div>
+        </div>
+      </td>
+
+      {/* diagnosis */}
+      <td className="block md:table-cell p-5">
+        <span className="md:hidden font-bold text-slate-500 text-xs uppercase mb-1 block">diagnosis:</span>
+        <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2 max-w-xs" title={record.diagnosis}>
+            {record.diagnosis || "No diagnosis listed"}
+        </p>
+      </td>
+
+      {/* Ref No */}
+      <td className="block md:table-cell p-5">
+         <span className="md:hidden font-bold text-slate-500 text-xs uppercase mb-1 block">Ref No:</span>
+         <span className="inline-block px-2 py-1 bg-slate-100 dark:bg-gray-700 rounded text-xs font-mono text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-gray-600">
+            #{record.appointmentNumber}
+         </span>
+      </td>
+
+      {/* Time */}
+      <td className="block md:table-cell p-5">
+        <span className="md:hidden font-bold text-slate-500 text-xs uppercase mb-1 block">Time:</span>
+        <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200 font-medium">
+            <Clock size={16} className="text-teal-500" />
+            {record.appointmentTime}
+        </div>
+      </td>
+
+      {/* Action Column */}
+      <td className="block md:table-cell p-5">
+        <span className="md:hidden font-bold text-slate-500 text-xs uppercase mb-1 block">Action:</span>
         {isAssigned ? (
-          <span className="font-semibold text-green-700 dark:text-green-400">
-            Assigned to {record.assignedDoctor.fullName}
-          </span>
+          <div className="flex items-center justify-between md:justify-start gap-4">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-50 border border-green-200 text-green-700 dark:bg-green-900/30 dark:border-green-800 dark:text-green-300">
+                <UserCheck size={16} />
+                <span className="text-sm font-semibold">{record.assignedDoctor.fullName}</span>
+              </div>
+              <button
+                onClick={handleDelete}
+                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                title="Delete Appointment"
+              >
+                <Trash2 size={18} />
+              </button>
+          </div>
         ) : (
-          <div className="flex flex-col sm:flex-row gap-2 items-end sm:items-center justify-end md:justify-start">
-            <select
-              className="px-2 py-1.5 rounded border border-gray-300 dark:border-gray-600 text-black dark:bg-gray-700 dark:text-white w-full sm:w-auto"
-              value={record.assignedDoctorId || ""}
-              onChange={(e) => {
-                const selectedDoctorId = e.target.value;
-                setOpdRecords((prev) =>
-                  prev.map((r) =>
-                    r._id === record._id
-                      ? { ...r, assignedDoctorId: selectedDoctorId }
-                      : r
-                  )
-                );
-              }}
-            >
-              <option value="" disabled>
-                Select Doctor
-              </option>
-              {doctors.map((doc) => (
-                <option key={doc._id} value={doc._id}>
-                  {doc.fullName}
-                </option>
-              ))}
-            </select>
+          <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+            <div className="relative">
+                <select
+                className="w-full sm:w-40 pl-2 pr-8 py-2 text-sm rounded-lg border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none shadow-sm transition-all"
+                value={record.assignedDoctorId || ""}
+                onChange={(e) => {
+                    const selectedDoctorId = e.target.value;
+                    setOpdRecords((prev) =>
+                    prev.map((r) =>
+                        r._id === record._id
+                        ? { ...r, assignedDoctorId: selectedDoctorId }
+                        : r
+                    )
+                    );
+                }}
+                >
+                <option value="" disabled>Select Doctor</option>
+                {doctors.map((doc) => (
+                    <option key={doc._id} value={doc._id}>
+                    {doc.fullName}
+                    </option>
+                ))}
+                </select>
+            </div>
+            
             <button
-              className="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+              className="px-4 py-2 text-sm font-medium bg-teal-600 text-white rounded-lg hover:bg-teal-700 shadow-md hover:shadow-lg transform active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
               onClick={() => assignDoctorsHandler(record)}
               disabled={!record.assignedDoctorId}
             >
-              Send
+              Assign
             </button>
 
-            {/* ✅ Lucide Delete Icon */}
             <button
               onClick={handleDelete}
-              className="p-2 bg-red-600 text-white rounded hover:bg-red-700 transition flex items-center justify-center"
+              className="px-3 py-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"
               title="Delete Appointment"
             >
               <Trash2 size={18} />
             </button>
           </div>
         )}
-      </ResponsiveCell>
+      </td>
     </tr>
   );
 };
-
 
 export default AdminDashboard;

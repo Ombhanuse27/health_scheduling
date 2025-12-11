@@ -1,12 +1,11 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import OpdForm from "./components/OpdForm";
-// import AdminDashboard from "./components/AdminDashboard";
 import Login from "./components/Login/LoginForm";
 import Register from "./components/Login/RegisterForm";
 import Landingpage from "./components/LandingPage/Landingpage";
 import NavbarLink from './components/Navbar/NavbarLink';
 import ProtectedRoute  from "./components/Protectedroutes";
-import DoctorForm from "./components/Docform";
+// import DoctorForm from "./components/Docform";
 import Hospital from "./components/Hospital/Hospital";
 import Hospitalsidebar from "./_components/HospitalSidebar";
 import HospitalDetails from "./components/Hospital/HospitalDetails";
@@ -22,35 +21,37 @@ import TeleConsultPage from "./components/TeleConsultPage";
 function App() {
   return (
     <Router>
-      {/* NavbarLink renders here, once for all pages */}
-      <NavbarLink />
-      
-      {/* This div provides a default background, but doesn't center the content */}
-      <div className="min-h-screen bg-gray-100">
-        <Routes>
-     
-        <Route path="/" element={<Landingpage />} />
-        <Route path="/hospital" element={<Hospital />} />
-        <Route path="/hospitalsidebar" element={<Hospitalsidebar />} />
-        <Route path="/doctorsidebar" element={<DoctorSidebar />} />
-        <Route path="/patientsidebar" element={<PatientSidebar />} />
-          <Route path="/opdForm" element={<> <OpdForm /></>} />
-          <Route path="/hospital/:hospitalId" element={<><HospitalDetails /></>}/>
-          <Route path="/doctorInfo" element={<DoctorInfo />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/DoctorSearchTable" element={<DoctorSearchTable />} />
-           <Route path="/teleconsult/:roomId" element={<TeleConsultPage />} />
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <AdminDashboard />
-              </ProtectedRoute>
-            } 
-          />
 
-        </Routes>
+      <div className="h-screen w-screen overflow-hidden bg-gray-100 flex flex-col">
+        
+        {/* Navbar sits at the top */}
+        <div className="flex-shrink-0 z-50">
+          <NavbarLink />
+        </div>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden relative">
+          <Routes>
+            <Route path="/" element={<Landingpage />} />
+            <Route path="/hospital" element={<Hospital />} />
+            <Route path="/hospitalsidebar/*" element={<Hospitalsidebar />} /> {/* Added /* for nested routes */}
+            <Route path="/doctorsidebar" element={<DoctorSidebar />} />
+            <Route path="/patientsidebar" element={<PatientSidebar />} />
+            <Route path="/opdForm" element={<OpdForm />} />
+            <Route path="/hospital/:hospitalId" element={<HospitalDetails />} />
+            <Route path="/doctorInfo" element={<DoctorInfo />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/DoctorSearchTable" element={<DoctorSearchTable />} />
+            <Route path="/teleconsult/:roomId" element={<TeleConsultPage />} />
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+          </Routes>
+        </div>
       </div>
     </Router>
   );

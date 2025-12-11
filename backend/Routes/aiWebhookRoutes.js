@@ -160,8 +160,8 @@ router.post("/webhook", async (req, res) => {
       }
       
       // --- FLOW 2: SUBMISSION (All Data Collected) ---
-      // Triggered when symptoms are filled (last question)
-      else if (params.symptoms) {
+      // Triggered when diagnosis are filled (last question)
+      else if (params.diagnosis) {
         console.log("AI Webhook: Booking...");
         
         const rawName = (typeof params.fullName === 'object') ? params.fullName.name : params.fullName;
@@ -204,7 +204,7 @@ router.post("/webhook", async (req, res) => {
           contactNumber,
           email: emailAddress || null, 
           address: "Booked via AI Agent",
-          symptoms: params.symptoms,
+          diagnosis: params.diagnosis,
           hospitalId: HOSPITAL_ID,
           hospitalName: HOSPITAL_NAME,
           selectedDoctor: null, // Skip doctor selection

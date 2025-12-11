@@ -30,7 +30,7 @@ useEffect(() => {
 
       console.log("Hospital data:", data); // Debugging
       setHospital(data);
-      setDoctor(prev => ({ ...prev, hospital: data.username })); // set hospital automatically
+      setDoctor(prev => ({ ...prev, hospital: data.username ,hospitalId:data._id})); // set hospital automatically
 
       // ✅ Fetch doctors once hospital is known
         const doctorsList = await getDoctorsData();
@@ -67,6 +67,7 @@ useEffect(() => {
     address: "",
     specialization: "",
     hospital: "",
+    hospitalId: "",
     photo: "",
   });
 

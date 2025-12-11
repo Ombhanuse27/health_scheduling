@@ -132,16 +132,29 @@ router.post("/opd/:hospitalId", async (req, res) => {
 
     console.log(`Time Debug: Current=${currentTimeInMinutes}, Start=${start}, End=${end}`);
 
-    // Check availability
-    const existingAppointments = await opdModel
-      .find({
-        hospitalId,
-        appointmentDate: localDate,
-        preferredSlot: `${startStr} - ${endStr}`,
-      })
-      .sort({ appointmentTime: 1 });
 
-    let nextSequentialTime = start;
+    if (!selectedDoctor || selectedDoctor === "null" || selectedDoctor === "") {
+      selectedDoctor = null;
+    }
+
+    let query = {
+        hospitalId,
+        appointmentDate: localDate,
+        preferredSlot: `${startStr} - ${endStr}`,
+    };
+
+    if (selectedDoctor) {
+        query.assignedDoctor = selectedDoctor;
+    } else {
+        
+        query.assignedDoctor = null;
+    }
+
+    const existingAppointments = await opdModel
+      .find(query)
+      .sort({ appointmentTime: 1 });
+
+    let nextSequentialTime = start;
     if (existingAppointments.length > 0) {
       const lastAppointment = existingAppointments[existingAppointments.length - 1];
       const lastMinutes = toMinutes(lastAppointment.appointmentTime);
@@ -175,7 +188,7 @@ router.post("/opd/:hospitalId", async (req, res) => {
       contactNumber, 
       email, 
       address: req.body.address,
-      symptoms: req.body.symptoms,
+      diagnosis: req.body.diagnosis,
       hospitalId: new mongoose.Types.ObjectId(hospitalId),
       appointmentNumber: counter.seq,
       appointmentDate: localDate,

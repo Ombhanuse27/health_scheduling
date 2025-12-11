@@ -7,7 +7,7 @@ const opdSchema = new mongoose.Schema({
   contactNumber: String,
   email: String,
   address: String,
-  symptoms: String,
+  diagnosis: String,
   preferredSlot: String, // New field for preferred slot
   hospitalId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hospital', required: true },
    assignedDoctor: {
