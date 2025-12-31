@@ -235,6 +235,27 @@ export const sendPrescriptionEmail = async ({
   });
 };
 
+// ✅ Reschedule OPD Appointment
+export const rescheduleOpdAppointment = async (recordId, newSlot, token) => {
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/opd/${recordId}/reschedule`,
+      { newSlot },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error rescheduling appointment:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+
 
 
 export const getOpdRecords = (token) =>

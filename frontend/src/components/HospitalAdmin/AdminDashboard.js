@@ -20,6 +20,9 @@ import {
   deleteOpdRecord 
 } from "../../api/api";
 
+import { rescheduleOpdAppointment } from "../../api/api";
+
+
 // --- Helper Functions (UNCHANGED) ---
 
 const getTodayDate = () => {
@@ -90,7 +93,53 @@ const AdminDashboard = ({ children }) => {
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const [selectedDoctorId, setSelectedDoctorId] = useState(""); 
   const [timeSlots, setTimeSlots] = useState([]); 
-  
+  const [rescheduleRecord, setRescheduleRecord] = useState(null);
+const [newSlot, setNewSlot] = useState("");
+const [rescheduling, setRescheduling] = useState(false);
+
+
+const getNextAvailableSlots = (currentSlot) => {
+  const index = timeSlots.findIndex((slot) => slot === currentSlot);
+  if (index === -1) return [];
+  return timeSlots.slice(index + 1);
+};
+
+const handleReschedule = async () => {
+  if (!newSlot || !rescheduleRecord) return;
+
+  try {
+    setRescheduling(true);
+
+    const response = await rescheduleOpdAppointment(
+      rescheduleRecord._id,
+      newSlot,
+      token
+    );
+
+    alert("Appointment rescheduled successfully!");
+
+    // 🔄 Update UI instantly
+    setOpdRecords((prev) =>
+      prev.map((r) =>
+        r._id === rescheduleRecord._id
+          ? {
+              ...r,
+              preferredSlot: response.appointment.preferredSlot,
+              appointmentTime: response.appointment.appointmentTime,
+            }
+          : r
+      )
+    );
+
+    setRescheduleRecord(null);
+    setNewSlot("");
+  } catch (error) {
+    alert(error.response?.data?.message || "Failed to reschedule appointment");
+  } finally {
+    setRescheduling(false);
+  }
+};
+
   const token = localStorage.getItem("token");
   const todayStr = getTodayDate();
   
@@ -345,11 +394,14 @@ const AdminDashboard = ({ children }) => {
                                             </span>
                                         </div>
                                         <AppointmentTable 
-                                            records={recordsInSlot} 
-                                            doctors={doctors}
-                                            assignDoctorsHandler={assignDoctorsHandler}
-                                            setOpdRecords={setOpdRecords}
-                                        />
+  records={recordsInSlot} 
+  doctors={doctors}
+  assignDoctorsHandler={assignDoctorsHandler}
+  setOpdRecords={setOpdRecords}
+  setRescheduleRecord={setRescheduleRecord}
+  setNewSlot={setNewSlot}
+/>
+
                                     </div>
                                 );
                             })}
@@ -395,6 +447,56 @@ const AdminDashboard = ({ children }) => {
             )}
 
             {children}
+
+            {rescheduleRecord && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md">
+      <h3 className="text-xl font-bold mb-4 text-slate-800 dark:text-white">
+        Reschedule Appointment
+      </h3>
+
+      <p className="text-sm text-slate-500 mb-3">
+        Current Slot:{" "}
+        <span className="font-semibold">
+          {rescheduleRecord.preferredSlot}
+        </span>
+      </p>
+
+      <select
+        className="w-full px-4 py-3 border rounded-lg mb-4"
+        value={newSlot}
+        onChange={(e) => setNewSlot(e.target.value)}
+      >
+        <option value="">Select new slot</option>
+        {getNextAvailableSlots(rescheduleRecord.preferredSlot).map(
+          (slot, index) => (
+            <option key={index} value={slot}>
+              {slot}
+            </option>
+          )
+        )}
+      </select>
+
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => setRescheduleRecord(null)}
+          className="px-4 py-2 rounded-lg border"
+        >
+          Cancel
+        </button>
+
+        <button
+          disabled={!newSlot || rescheduling}
+          onClick={handleReschedule}
+          className="px-4 py-2 bg-teal-600 text-white rounded-lg disabled:opacity-50"
+        >
+          {rescheduling ? "Rescheduling..." : "Confirm"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
           </div>
         )}
       </div>
@@ -403,7 +505,15 @@ const AdminDashboard = ({ children }) => {
 };
 
 // ✅ Extracted Table
-const AppointmentTable = ({ records, doctors, assignDoctorsHandler, setOpdRecords }) => (
+const AppointmentTable = ({
+  records,
+  doctors,
+  assignDoctorsHandler,
+  setOpdRecords,
+  setRescheduleRecord,
+  setNewSlot,
+}) => (
+
     <div className="overflow-x-auto">
         <table className="w-full border-collapse">
             <thead className="hidden md:table-header-group">
@@ -418,12 +528,15 @@ const AppointmentTable = ({ records, doctors, assignDoctorsHandler, setOpdRecord
             <tbody className="divide-y divide-slate-50 dark:divide-gray-700 md:divide-slate-100">
                 {records.map((record) => (
                     <AppointmentRow
-                        key={record._id}
-                        record={record}
-                        doctors={doctors}
-                        assignDoctorsHandler={assignDoctorsHandler}
-                        setOpdRecords={setOpdRecords}
-                    />
+  key={record._id}
+  record={record}
+  doctors={doctors}
+  assignDoctorsHandler={assignDoctorsHandler}
+  setOpdRecords={setOpdRecords}
+  setRescheduleRecord={setRescheduleRecord}
+  setNewSlot={setNewSlot}
+/>
+
                 ))}
             </tbody>
         </table>
@@ -436,7 +549,10 @@ const AppointmentRow = ({
   doctors,
   assignDoctorsHandler,
   setOpdRecords,
+  setRescheduleRecord,
+  setNewSlot,
 }) => {
+
   const token = localStorage.getItem("token");
   const isAssigned = record.assignedDoctor && record.assignedDoctor.fullName;
 
@@ -517,7 +633,22 @@ const AppointmentRow = ({
               >
                 <Trash2 size={18} />
               </button>
+
+              <button
+  onClick={() => {
+    setRescheduleRecord(record);
+    setNewSlot("");
+  }}
+  className="px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+>
+  Reschedule
+</button>
+
+
+
           </div>
+          
+
         ) : (
           <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
             <div className="relative">

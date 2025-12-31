@@ -302,4 +302,122 @@ router.put("/opd/:id/prescription", async (req, res) => {
   }
 });
 
+router.put("/opd/:id/reschedule", authMiddleware, async (req, res) => {
+  try {
+    const { newSlot } = req.body;
+
+    if (!newSlot) {
+      return res.status(400).json({ message: "New slot is required" });
+    }
+
+    // 1️⃣ Find appointment
+    const appointment = await opdModel.findById(req.params.id);
+    if (!appointment) {
+      return res.status(404).json({ message: "Appointment not found" });
+    }
+
+    // 2️⃣ Clean & parse slot
+    const cleanedSlot = cleanTimeSlot(newSlot);
+
+    let start, end, startStr, endStr;
+    try {
+      const parsed = parseSlotTime(cleanedSlot);
+      start = parsed.start;
+      end = parsed.end;
+      startStr = parsed.startStr;
+      endStr = parsed.endStr;
+
+      if (isNaN(start) || isNaN(end)) throw new Error();
+    } catch {
+      return res.status(400).json({
+        message: "Invalid slot format. Please select a valid slot.",
+      });
+    }
+
+    // 3️⃣ Current IST time
+    const nowIST = new Date(
+      new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+    );
+    const currentMinutes = nowIST.getHours() * 60 + nowIST.getMinutes();
+
+    // 4️⃣ Fetch existing appointments in new slot (exclude current one)
+    const existingAppointments = await opdModel
+      .find({
+        hospitalId: appointment.hospitalId,
+        appointmentDate: appointment.appointmentDate,
+        preferredSlot: `${startStr} - ${endStr}`,
+        _id: { $ne: appointment._id }, // 🔥 important
+      })
+      .sort({ appointmentTime: 1 });
+
+    // 5️⃣ Calculate next available time
+    let nextTime = start;
+    if (existingAppointments.length > 0) {
+      const last = existingAppointments[existingAppointments.length - 1];
+      const lastMinutes = toMinutes(last.appointmentTime);
+      if (!isNaN(lastMinutes)) nextTime = lastMinutes + 20;
+    }
+
+    nextTime = Math.max(nextTime, currentMinutes + 20);
+
+    if (nextTime >= end) {
+      return res.status(400).json({
+        message: `No available time in ${cleanedSlot}. Please try another slot.`,
+      });
+    }
+
+    const newAppointmentTime = formatTime(nextTime);
+
+    // 6️⃣ Update appointment
+    appointment.preferredSlot = `${startStr} - ${endStr}`;
+    appointment.appointmentTime = newAppointmentTime;
+
+    await appointment.save();
+
+    // 7️⃣ SEND EMAIL / SMS (🔥 IMPORTANT)
+    const messageText = `Dear ${appointment.fullName},
+
+Your appointment has been RESCHEDULED.
+
+📅 Date: ${appointment.appointmentDate}
+⏰ Time: ${newAppointmentTime}
+🪪 Token No: ${appointment.appointmentNumber}
+
+Thank you.`;
+
+    if (appointment.email) {
+      apiInstance
+        .sendTransacEmail({
+          sender: { email: process.env.EMAIL_FROM },
+          to: [{ email: appointment.email, name: appointment.fullName }],
+          subject: "Appointment Rescheduled Confirmation",
+          textContent: messageText,
+        })
+        .catch((e) => console.error("Email error:", e.message));
+    } else if (appointment.contactNumber) {
+      axios
+        .get("https://www.fast2sms.com/dev/bulkV2", {
+          params: {
+            message: messageText,
+            language: "english",
+            route: "q",
+            numbers: appointment.contactNumber,
+            authorization: FAST2SMS_API_KEY,
+          },
+        })
+        .catch((e) => console.error("SMS error:", e.message));
+    }
+
+    // 8️⃣ Response
+    res.status(200).json({
+      message: "Appointment rescheduled successfully",
+      appointment,
+    });
+  } catch (error) {
+    console.error("Reschedule Error:", error);
+    res.status(500).json({ message: error.message || "Server Error" });
+  }
+});
+
+
 module.exports = router;
