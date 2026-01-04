@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { getLoggedInDoctor, updateDoctorInfo } from "../../api/api";
+// import { getLoggedInDoctor, updateDoctorInfo } from "../../api/api";
+import { getLoggedInDoctor, updateDoctorInfo } from "../../api/doctorApi";
 import { FaCamera, FaPenNib, FaUser, FaEnvelope, FaPhone, FaStethoscope, FaMapMarkerAlt, FaVenusMars, FaCalendarAlt } from "react-icons/fa"; // Assuming you have react-icons or similar, if not standard SVG icons are used below
 
 // Reusing your Cloudinary config

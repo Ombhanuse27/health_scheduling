@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getOpdRecords } from "../../api/api";
+import { getOpdRecords } from "../../api/opdApi";
 import {
   Table,
   TableBody,

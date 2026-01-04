@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef } from "react";
-import { submitOpdForm, getHospitals, checkDuplicate,getDoctorsData } from "../api/api";
+import { getHospitals } from "../api/adminApi";
+import { getDoctorsData } from "../api/doctorApi";
+import {submitOpdForm,checkDuplicate} from "../api/opdApi";
 import React from "react";
 
 
@@ -252,42 +254,24 @@ const OpdForm = () => {
     const hospitalOpenMinutes = parseTime(selectedHospital.hospitalStartTime);
     const hospitalCloseMinutes = parseTime(selectedHospital.hospitalEndTime);
 
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-    // Check if hospital is open
-    if (currentMinutes < hospitalOpenMinutes) {
-      alert(`Appointments start at ${selectedHospital.hospitalStartTime}.`);
-      return;
-    } else if (currentMinutes > hospitalCloseMinutes) {
-      alert("Appointments are closed for today.");
-      return;
-    }
-
-    // Check if selected slot has passed
-    const slot = formData.preferredSlot;
-    if (slot) {
-      // Get the end time of the slot (e.g., "12:00 PM")
-      const slotEndTimeStr = slot.split(" - ")[1];
-      // Parse it to minutes
-      const slotEndMinutes = parseTime(slotEndTimeStr);
-
-      if (currentMinutes > slotEndMinutes) {
-        alert(
-          "The selected time slot has already passed. Please choose a valid slot."
-        );
-        return;
-      }
-    }
-    // --- End Dynamic Time Validation ---
+    
 
     try {
-      const response = await submitOpdForm(formData.hospitalId, formData);
-      alert(response.message || "OPD Form submitted successfully");
-    } catch (error) {
-      alert(error?.response?.data?.message || "Error submitting OPD Form");
-      console.error("Submit error:", error);
-    }
+  const response = await submitOpdForm(formData.hospitalId, formData);
+
+  if (!response?.appointment?._id) {
+    throw new Error("Appointment not created");
+  }
+
+  alert(response.message);
+} catch (error) {
+  alert(
+    error?.response?.data?.message ||
+    error.message ||
+    "Appointment booking failed"
+  );
+}
+
   };
 
   return (

@@ -4,16 +4,15 @@ import "regenerator-runtime/runtime";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
-import {
-  getRecords,
-  getDoctorsData,
-  savePrescriptionPdf, // 🟢 This API function is updated
-  sendPrescriptionEmail, // 🟢 This API function is updated
-  getPrescriptions,
-} from "../../api/api";
+
+import { getDoctorsData,getPrescriptions } from "../../api/doctorApi.js";
+import { savePrescriptionPdf,getDoctorOpdRecords } from "../../api/opdApi.js";
+import { sendPrescriptionEmail } from "../../api/communicationApi.js";
+
+
 // ⛔️ jsPDF is no longer needed
-// import { jsPDF } from "jspdf";
-import { generateTeleconsultLink, sendTeleconsultEmail } from "../../api/api";
+import { generateTeleconsultLink } from "../../api/communicationApi.js";
+import { sendTeleconsultEmail } from "../../api/communicationApi.js";
 
 // ✅ NEW: Import html2pdf.js and your new template
 import html2pdf from "html2pdf.js";
@@ -66,7 +65,7 @@ const DoctorDashboard = ({ children }) => {
       setLoading(true);
       try {
         const [opdResponse, doctors, prescriptionsResponse] = await Promise.all([
-          getRecords(token),
+          getDoctorOpdRecords(token),
           getDoctorsData(token),
           getPrescriptions(token),
         ]);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { submitOpdForm } from "../../api/api";
+import { submitOpdForm } from "../../api/opdApi";
 
 const DoctorInfo = () => {
   const [formData, setFormData] = useState({

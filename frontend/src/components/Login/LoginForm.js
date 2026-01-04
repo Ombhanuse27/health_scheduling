@@ -3,7 +3,8 @@ import Logo from '../../images/login.jpg'
 import './LoginForm.css'
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginAdmin, loginDoctor } from "../../api/api"; // Import both APIs
+import { loginAdmin } from "../../api/adminApi";
+import { loginDoctor } from "../../api/doctorApi";
 import Footer from '../Footer/Footer';
 
 function LoginForm() {

@@ -1,145 +1,21 @@
 const express = require("express");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const Admin = require("../model/adminModel");
-const Doctor = require("../model/Doctor");
-
-require("dotenv").config();
-const authMiddleware=require("../middleware/authMiddleware");
-const opdModel = require("../model/opdModel");
 const router = express.Router();
 
+const authMiddleware = require("../middleware/authMiddleware");
+const adminController = require("../controllers/adminController");
 
+// Health / Cron
+router.get("/getcron", adminController.getCron);
 
-router.get("/getcron", (req, res) => {
-  res.status(200).send("Cron ping successful at " + new Date().toISOString());
-});
+// Auth
+router.post("/register", adminController.registerAdmin);
+router.post("/login", adminController.loginAdmin);
 
-// Admin Registration 
-router.post("/register", async (req, res) => {
-  try {
-    const { username, password } = req.body;
+// Admin Data
+router.get("/getHospitals", adminController.getHospitals);
+router.get("/me", authMiddleware, adminController.getMe);
 
-    // Validate request body
-    if (!username || !password) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    const existingAdmin = await Admin.findOne({ username });
-    if (existingAdmin) {
-      return res.status(400).json({ message: "Admin already exists" });
-    }
-
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create new admin
-    const newAdmin = new Admin({ username, password: hashedPassword });
-    await newAdmin.save();
-
-    res.status(201).json({ message: "Admin registered successfully" });
-  } catch (err) {
-    console.error("Registration error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// Admin Login
-router.post("/login", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-
-    // Validate request body
-    if (!username || !password) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    // Find the admin
-    const admin = await Admin.findOne({ username });
-    if (!admin) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    // Compare passwords
-    const isMatch = await bcrypt.compare(password, admin.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    // Generate JWT Token
-    const token = jwt.sign({ id: admin._id }, process.env.JWT_SECRET, { expiresIn: "7h" });
-
-    res.json({ message: "Login successful", token });
-  } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-
-router.get("/getHospitals", async (req, res) => {
-  try {
-    // Fetch all fields, but exclude the password for security
-const admins = await Admin.find({}).select("-password");// Only fetch username field
-    res.json(admins);
-  } catch (err) {
-    console.error("Error fetching admins:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// In your backend router file (The corrected version)
-router.get("/me", authMiddleware, async (req, res) => {
-  try {
-    // ✅ THIS IS THE FIX: Remove .select("username") to get all fields
-    // .select("-password") is a good practice to explicitly exclude the password hash
-    const admin = await Admin.findById(req.user.id).select("-password");
-
-    if (!admin) {
-      return res.status(404).json({ message: "Admin not found" });
-    }
-    res.json(admin); // This now sends the full hospital object
-  } catch (err) {
-    console.error(err); // Good practice to log the actual error
-    res.status(500).json({ message: "Server error" });
-  }
-});
-router.post('/assignDoctors', async (req, res) => {
-  const { recordId, doctorId } = req.body;
-
-  if (!recordId || !doctorId) {
-    return res.status(400).json({ message: "recordId and doctorId are required." });
-  }
-
-  try {
-    const doctor = await Doctor.findById(doctorId);
-    if (!doctor) {
-      return res.status(404).json({ message: "Doctor not found." });
-    }
-
-    const appointment = await opdModel.findById(recordId);
-    if (!appointment) {
-      return res.status(404).json({ message: "Appointment record not found." });
-    }
-
-    // Assign doctor to the OPD record
-    appointment.assignedDoctor = doctorId;
-    await appointment.save();
-
-    // Optionally, also store the appointment in the doctor's model
-    if (!doctor.assignedAppointments?.includes(recordId)) {
-      doctor.assignedAppointments = doctor.assignedAppointments || [];
-      doctor.assignedAppointments.push(recordId);
-      await doctor.save();
-    }
-
-    return res.status(200).json({ message: "Doctor successfully assigned to appointment." });
-  } catch (error) {
-    console.error("Error assigning doctor:", error.message);
-    res.status(500).json({ message: "Internal server error." });
-  }
-});
-
-
+// OPD
+router.post("/assignDoctors", adminController.assignDoctor);
 
 module.exports = router;

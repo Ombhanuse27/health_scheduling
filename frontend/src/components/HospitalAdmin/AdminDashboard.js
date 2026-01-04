@@ -12,15 +12,23 @@ import {
 } from "lucide-react";
 
 // ✅ Import API functions
-import { 
-  getOpdRecords, 
-  getDoctorsData, 
-  assignDoctors, 
-  getLoggedInHospital, 
-  deleteOpdRecord 
-} from "../../api/api";
+// import { 
+//   getOpdRecords, 
+//   getDoctorsData, 
+//   assignDoctors, 
+//   getLoggedInHospital, 
+//   deleteOpdRecord,
+//   delayAppointments
 
-import { rescheduleOpdAppointment } from "../../api/api";
+// } from "../../api/api";
+
+import { getOpdRecords } from "../../api/opdApi";
+import { getDoctorsData } from "../../api/doctorApi";
+import { assignDoctors } from "../../api/adminApi";
+import { getLoggedInHospital } from "../../api/adminApi";
+import { deleteOpdRecord, delayAppointments } from "../../api/opdApi";
+
+import {rescheduleOpdAppointment} from "../../api/opdApi";
 
 
 // --- Helper Functions (UNCHANGED) ---
@@ -139,6 +147,36 @@ const handleReschedule = async () => {
     setRescheduling(false);
   }
 };
+
+const applyDelay = async (minutes) => {
+  if (!window.confirm(`Delay all upcoming appointments by ${minutes} minutes?`)) return;
+
+  try {
+    const res = await delayAppointments(minutes, token);
+    alert(res.data.message);
+
+    // 🔄 Refresh data
+    const updated = await getOpdRecords(token);
+
+const populated = updated.data.map(record => {
+  if (record.assignedDoctor) {
+    const doctor = doctors.find(
+      d => d._id === record.assignedDoctor
+    );
+    if (doctor) {
+      return { ...record, assignedDoctor: doctor };
+    }
+  }
+  return record;
+});
+
+setOpdRecords(populated);
+
+  } catch (err) {
+    alert("Failed to apply delay");
+  }
+};
+
 
   const token = localStorage.getItem("token");
   const todayStr = getTodayDate();
@@ -294,6 +332,22 @@ const handleReschedule = async () => {
                 <span className="text-sm font-medium text-slate-600 dark:text-slate-300">System Live</span>
               </div>
             </div>
+            <div className="flex gap-3">
+  <button
+    onClick={() => applyDelay(5)}
+    className="px-4 py-2 bg-amber-500 text-white rounded-lg"
+  >
+    Delay +5 min
+  </button>
+
+  <button
+    onClick={() => applyDelay(10)}
+    className="px-4 py-2 bg-red-500 text-white rounded-lg"
+  >
+    Delay +10 min
+  </button>
+</div>
+
 
             {/* 🎨 UI UPDATE: Glassmorphism Control Bar */}
             <div className="sticky top-0 z-30 backdrop-blur-md bg-white/80 dark:bg-gray-800/90 rounded-2xl shadow-xl border border-white/20 dark:border-gray-700 p-4 mb-8 transition-all hover:shadow-2xl">

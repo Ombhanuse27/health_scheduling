@@ -3,7 +3,9 @@
 import { Link } from 'react-router-dom';
 import React, { useState, useEffect, useMemo } from 'react';
 import doctorone from '../../images/doctor-6.jpg';
-import { getDoctorsData, getHospitalsData } from "../../api/api"; 
+// import { getDoctorsData, getHospitalsData } from "../../api/api"; 
+import { getDoctorsData } from "../../api/doctorApi";
+import {getHospitalsData} from "../../api/hospitalApi";
 
 function OurDoctors({ hospitalId }) {
   const [loading, setLoading] = useState(true);

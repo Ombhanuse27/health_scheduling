@@ -42,9 +42,10 @@ mongoose
 // ✅ API Routes
 app.use("/api/admin", adminRoutes);
 app.use("/api/doctors", doctorRoutes);
-app.use("/api", hospitalRoutes);
+
 app.use("/api", opdRoutes);
-app.use("/api", emailRoutes);
+app.use("/api/hospital", hospitalRoutes);
+app.use("/api/email", emailRoutes);
 app.use("/api/ai", aiWebhookRoutes);
 
 app.get("/", (req, res) => res.send("🏥 Hospital Queuing System Running"));

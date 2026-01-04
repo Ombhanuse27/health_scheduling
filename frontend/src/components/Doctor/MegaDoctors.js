@@ -6,7 +6,11 @@ import doctorthree from '../../images/doctor-1.jpg';
 import doctorfour from '../../images/doctor-4.jpg';
 import doctorfive from '../../images/doctor-2.jpg';
 import doctorsix from '../../images/doctor-5.jpg';
-import { getOpdRecords, registerDoctor,getLoggedInHospital ,getDoctorsData,deleteDoctor} from "../../api/api";
+// import { getOpdRecords, registerDoctor,getLoggedInHospital ,getDoctorsData,deleteDoctor} from "../../api/api";
+import { getOpdRecords } from "../../api/opdApi";
+import { registerDoctor } from "../../api/doctorApi";
+import { getLoggedInHospital } from "../../api/adminApi";
+import { getDoctorsData, deleteDoctor } from "../../api/doctorApi";
 
 const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/da9xvfoye/upload";
 const CLOUDINARY_PRESET = "ml_default";

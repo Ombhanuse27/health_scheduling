@@ -21,7 +21,7 @@ import {
   faAward
 } from "@fortawesome/free-solid-svg-icons";
 import OurDoctors from "../Doctor/ourDoctors";
-import { getHospitalsData } from "../../api/api.js";
+import { getHospitalsData } from "../../api/hospitalApi.js";
 import doctorone from "../../images/doctor-6.jpg";
 
 const HospitalDetails = () => {

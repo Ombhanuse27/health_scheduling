@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 // import { Link } from 'react-router-dom'
 import Logo from '../../images/login.jpg'
-import { registerAdmin } from "../../api/api";
+import { registerAdmin } from "../../api/adminApi";
 import NavLink  from '../Navbar/NavbarLink';
 import Footer from '../Footer/Footer';
 import './RegisterForm.css';

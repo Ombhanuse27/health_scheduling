@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { submitHospitalInfo, getLoggedInHospital } from "../../api/api";
+import { getLoggedInHospital} from "../../api/adminApi";
+import { submitHospitalInfo } from "../../api/hospitalApi";
 
 const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/da9xvfoye/upload";
 const CLOUDINARY_PRESET = "ml_default";

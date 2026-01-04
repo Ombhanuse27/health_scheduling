@@ -4,7 +4,7 @@ import HospitalCard from "./HospitalCard.js";
 import doctorone from "../../images/doctor-6.jpg";
 import "./Hospital.css";
 import Footer from "../Footer/Footer.js";
-import { getHospitalsData } from "../../api/api.js"; // Import API function
+import { getHospitalsData } from "../../api/hospitalApi.js";
 
 const Hospital = () => {
   const [HospitalList, setHospitalList] = useState([]); // Master list of all hospitals
