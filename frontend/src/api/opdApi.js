@@ -1,5 +1,7 @@
 import axiosInstance from "./axiosInstance";
 
+
+
 export const submitOpdForm = (hospitalId, data) =>
   axiosInstance.post(`/opd/${hospitalId}`, data);
 
@@ -36,3 +38,8 @@ export const savePrescriptionPdf = (
     medication,
     advice,
   });
+
+  export const registerCallIntent= (data) => 
+    axiosInstance.post(`/ai/register-call-intent`, data);
+
+  

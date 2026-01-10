@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import "./HospitalDetails.css";
 import Links from "../Navbar/NavbarLink";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { registerCallIntent } from "../../api/opdApi.js";
 import {
   faMapMarkerAlt,
   faPhoneAlt,
@@ -18,15 +19,29 @@ import {
   faGlobe,
   faEnvelope,
   faInfoCircle,
-  faAward
+  faAward,
+  faRobot,
+  faTimes
+
 } from "@fortawesome/free-solid-svg-icons";
 import OurDoctors from "../Doctor/ourDoctors";
 import { getHospitalsData } from "../../api/hospitalApi.js";
 import doctorone from "../../images/doctor-6.jpg";
 
+
+const AI_AGENT_NUMBER = "+1 361-902-9634";
+
 const HospitalDetails = () => {
   const { hospitalId } = useParams();
   const [hospital, setHospital] = useState(null);
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiForm, setAiForm] = useState({ 
+    fullName: "", 
+    contactNumber: "", 
+    age: "", 
+    gender: "Male" 
+  });
+  const [aiStatus, setAiStatus] = useState("idle"); // idle, loading, success, error
 
   useEffect(() => {
     const fetchHospitalDetails = async () => {
@@ -67,6 +82,27 @@ const HospitalDetails = () => {
 
     fetchHospitalDetails();
   }, [hospitalId]);
+
+  // --- AI FORM HANDLER ---
+  const handleAiRegister = async (e) => {
+    e.preventDefault();
+    setAiStatus("loading");
+    try {
+        // ✅ CALLING THE SIMPLIFIED API
+        await registerCallIntent({
+            fullName: aiForm.fullName,
+            contactNumber: aiForm.contactNumber,
+            age: aiForm.age,
+            gender: aiForm.gender,
+            hospitalId: hospitalId,
+            hospitalName: hospital.hospitalName
+        });
+        setAiStatus("success");
+    } catch (error) {
+        console.error("AI Register Error:", error);
+        setAiStatus("error");
+    }
+  };
 
   if (!hospital) {
     return (
@@ -114,6 +150,13 @@ const HospitalDetails = () => {
               <FontAwesomeIcon icon={faPhoneAlt} style={{ color: "#2ECC71", fontSize: "15px", padding: "5px", marginRight: "5px" }} /> {hospital.contactNumber}
             </a>
           </div>
+
+          <button 
+            onClick={() => setShowAiModal(true)}
+            className="mt-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-full font-bold shadow-lg hover:scale-105 transition-transform flex items-center gap-2"
+          >
+            <FontAwesomeIcon icon={faRobot} /> Book via AI Agent
+          </button>
         </div>
 
         <p id="rating2">
@@ -208,6 +251,95 @@ const HospitalDetails = () => {
       </div>
       
       <OurDoctors hospitalId={hospitalId} />
+      {/* ✅ AI REGISTRATION MODAL */}
+      {showAiModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative">
+                
+                <button 
+                    onClick={() => { setShowAiModal(false); setAiStatus("idle"); }} 
+                    className="absolute top-4 right-4 text-gray-400 hover:text-red-500"
+                >
+                    <FontAwesomeIcon icon={faTimes} size="lg" />
+                </button>
+
+                <div className="text-center mb-6">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <FontAwesomeIcon icon={faRobot} className="text-blue-600 text-2xl" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-800">Pre-Book AI Call</h3>
+                    <p className="text-gray-500 text-sm">Register your details, then call to choose your slot.</p>
+                </div>
+
+                {aiStatus === "success" ? (
+                    <div className="text-center animate-fade-in-up">
+                        <div className="bg-green-100 text-green-700 p-4 rounded-lg mb-4">
+                            <strong>Access Granted!</strong><br/>
+                            Our AI now recognizes you.
+                        </div>
+                        <a href={`tel:${AI_AGENT_NUMBER}`} className="block w-full bg-green-500 text-white py-3 rounded-lg font-bold text-lg hover:bg-green-600 transition shadow-md">
+                            <FontAwesomeIcon icon={faPhoneAlt} className="mr-2" /> Call Now
+                        </a>
+                    </div>
+                ) : (
+                    <form onSubmit={handleAiRegister} className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                            <input 
+                                type="text" required
+                                className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                value={aiForm.fullName}
+                                onChange={(e) => setAiForm({...aiForm, fullName: e.target.value})}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Phone (Calling From)</label>
+                            <input 
+                                type="tel" required
+                                className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                placeholder="e.g. 9876543210"
+                                value={aiForm.contactNumber}
+                                onChange={(e) => setAiForm({...aiForm, contactNumber: e.target.value})}
+                            />
+                        </div>
+                        <div className="flex gap-4">
+                            <div className="w-1/2">
+                                <label className="block text-sm font-medium text-gray-700">Age</label>
+                                <input 
+                                    type="number" required
+                                    className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                    value={aiForm.age}
+                                    onChange={(e) => setAiForm({...aiForm, age: e.target.value})}
+                                />
+                            </div>
+                            <div className="w-1/2">
+                                <label className="block text-sm font-medium text-gray-700">Gender</label>
+                                <select 
+                                    className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                    value={aiForm.gender}
+                                    onChange={(e) => setAiForm({...aiForm, gender: e.target.value})}
+                                >
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button 
+                            type="submit" 
+                            disabled={aiStatus === "loading"}
+                            className="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition flex justify-center items-center shadow-md"
+                        >
+                            {aiStatus === "loading" ? "Registering..." : "Grant Call Access"}
+                        </button>
+                        
+                        {aiStatus === "error" && <p className="text-red-500 text-sm text-center">Registration failed. Please try again.</p>}
+                    </form>
+                )}
+            </div>
+        </div>
+      )}
     </div>
   );
 };
